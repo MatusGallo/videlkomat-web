@@ -1,6 +1,6 @@
 import type { Entry } from "../types";
 import type { RowEdit } from "../hooks/useRowEdit";
-import { Check, X, Pencil } from "../icons";
+import { Check, X, Pencil, Trash } from "../icons";
 import { groupAmount } from "../utils/format";
 
 export function AmountInput({ ed }: { ed: RowEdit }) {
@@ -60,7 +60,7 @@ export function RowActions({ e, ed, onRequestDelete }: RowActionsProps) {
         <Pencil size={14} />
       </button>
       <button className="od-del" onClick={() => onRequestDelete(e)} title="Smazat">
-        <X size={15} />
+        <Trash size={14} />
       </button>
     </div>
   );

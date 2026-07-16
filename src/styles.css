@@ -156,6 +156,19 @@ html, body { margin: 0; padding: 0; background: #141210; }
 .od-kpis-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .od-kpis-bar-label { font-weight: 800; font-size: 18.5px; letter-spacing: -.02em; color: var(--txt); }
 .od-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 18px; }
+/* Měsíční přehled na dashboardu má 5 karet: na desktopu 2 široké nahoře,
+   3 vedle sebe dole (6sloupcový grid: 3+3 nahoře, 2+2+2 dole). */
+.od-kpis.od-kpis-fuel { grid-template-columns: repeat(6, 1fr); }
+.od-kpis.od-kpis-fuel > .od-kpi:nth-child(-n+2) { grid-column: span 3; }
+.od-kpis.od-kpis-fuel > .od-kpi:nth-child(n+3) { grid-column: span 2; }
+/* Mobil / menší displeje: každá karta přes celou šířku (1 na řádek).
+   Reset span musí mít stejnou specificitu jako pravidla pro span výše,
+   jinak by karty držely span 3/2 i v jednosloupcovém gridu. */
+@media (max-width: 900px) {
+  .od-kpis.od-kpis-fuel { grid-template-columns: 1fr; }
+  .od-kpis.od-kpis-fuel > .od-kpi:nth-child(-n+2),
+  .od-kpis.od-kpis-fuel > .od-kpi:nth-child(n+3) { grid-column: auto; }
+}
 .od-kpi {
   position: relative; overflow: hidden;
   background: linear-gradient(180deg, rgba(255, 255, 255, .03), transparent 90px), var(--card);
@@ -251,9 +264,15 @@ html, body { margin: 0; padding: 0; background: #141210; }
 .od-table .r { text-align: right; }
 .od-table .strong { color: var(--txt); font-weight: 600; }
 .od-table .profit { color: var(--green); }
+.od-table .cost { color: var(--red); }
 .od-table .faint { color: var(--faint); }
 .od-table tfoot td { background: var(--panel2); font-weight: 700; border-top: 2px solid var(--orange-dim); border-bottom: none; font-family: 'JetBrains Mono', monospace; }
 .od-table tfoot td:first-child { font-family: 'Outfit'; }
+/* Zásahy + Palivo vedle sebe (dashboard) */
+.od-records-split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.od-records-split > .od-panel { margin: 0; min-width: 0; }
+@media (max-width: 1000px) { .od-records-split { grid-template-columns: 1fr; } }
+
 /* Záznamy seskupené po dnech – bez vnějšího boxu, každá tabulka je vlastní box */
 .od-records { margin-bottom: 18px; }
 .od-records .od-table-wrap { background: var(--panel); }
@@ -277,8 +296,35 @@ html, body { margin: 0; padding: 0; background: #141210; }
 .od-summary td.yr.profit { color: var(--green); }
 .od-summary td.av, .od-summary th.av { color: var(--muted); }
 .od-summary th.is-cur { color: var(--orange); }
+/* Souhrn: rozdělení do sekcí (Zásahy / Palivo / Výsledek) */
+.od-summary tr.od-sum-group th, .od-summary tr.od-sum-group td { background: var(--bg); border: none; }
+.od-summary .od-sum-group-lbl {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; font-size: 10.5px; color: var(--faint);
+  padding-top: 18px; padding-bottom: 6px; box-shadow: none;
+}
+.od-summary tbody tr.od-sum-group:first-child .od-sum-group-lbl { padding-top: 6px; }
+/* Palivo řádky – jemné oranžové odlišení */
+.od-summary td.cost { color: var(--red); }
+.od-summary td.yr.cost { color: var(--red); }
+/* Výsledek – zisk po palivu zvýrazněný, záporná hodnota červeně */
+.od-summary tr.g-net th, .od-summary tr.g-net td { font-weight: 700; }
+.od-summary tr.g-net .rowhead { color: var(--txt); }
+.od-table .loss, .od-summary td.yr.loss { color: var(--red); }
 .od-note { font-size: 12px; color: var(--muted); margin: 14px 4px 0; line-height: 1.5; }
 .od-note b { color: var(--orange); }
+
+/* Měsíční průměr – statistika pod souhrnnou tabulkou */
+.od-avg { margin-top: 22px; }
+.od-avg-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 12px; flex-wrap: wrap; }
+.od-avg-title {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; font-size: 11px; color: var(--muted);
+}
+.od-avg-sub { font-size: 12.5px; color: var(--faint); }
+.od-kpis-avg { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1100px) { .od-kpis-avg { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .od-kpis-avg { grid-template-columns: 1fr; } }
 
 .od-badge {
   display: inline-flex; align-items: center; gap: 5px; background: var(--green-bg); color: var(--green);
@@ -304,6 +350,15 @@ html, body { margin: 0; padding: 0; background: #141210; }
 .od-quick-btn:hover { filter: brightness(1.07); }
 .od-quick-btn:active { transform: scale(.98); }
 .od-quick-btn .od-kbd { margin-left: auto; }
+/* Sekundární rychlá akce (tankování) – nenápadnější než hlavní oranžová. */
+.od-quick-btn-fuel {
+  background: var(--card); color: var(--txt); box-shadow: none;
+  border: 1px solid var(--line2); margin-top: -4px;
+}
+.od-quick-btn-fuel:hover { filter: none; background: var(--panel2); border-color: var(--orange-dim); }
+.od-quick-btn-fuel svg { color: var(--orange); }
+.od-quick-btn-fuel .od-kbd { background: var(--line); color: var(--muted); border-color: var(--line2); }
+.od-label-opt { color: var(--faint); font-weight: 500; }
 .od-kbd {
   font-family: 'JetBrains Mono', monospace; font-size: 11px; background: #ffffff26;
   color: #1a0f06; padding: 1px 6px; border-radius: 5px; border: 1px solid #00000022;
@@ -409,6 +464,97 @@ html, body { margin: 0; padding: 0; background: #141210; }
   filter: invert(.7); cursor: pointer; opacity: .7;
 }
 .od-field input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-soft); }
+
+/* ── Custom date field + calendar popup ─────────────────────────── */
+.od-datefield { position: relative; width: 100%; }
+.od-date-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; height: 46px; padding: 0 14px; box-sizing: border-box;
+  background: var(--bg); border: 1px solid var(--line2); border-radius: 11px;
+  color: var(--txt); font-family: 'JetBrains Mono', monospace; font-size: 16px;
+  cursor: pointer; text-align: left; transition: border-color .13s, box-shadow .13s, background .13s;
+}
+.od-date-trigger:hover { border-color: var(--line2); background: var(--card); }
+.od-date-trigger.is-open,
+.od-date-trigger:focus-visible {
+  outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-soft);
+}
+.od-date-txt { display: inline-flex; align-items: baseline; gap: 9px; min-width: 0; }
+.od-date-wd {
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--orange); font-weight: 700;
+}
+.od-date-placeholder { color: var(--muted); }
+.od-date-ico { color: var(--muted); flex: 0 0 auto; transition: color .13s; }
+.od-date-trigger:hover .od-date-ico,
+.od-date-trigger.is-open .od-date-ico { color: var(--orange); }
+
+.od-cal {
+  position: absolute; z-index: 60; top: calc(100% + 8px); left: 0;
+  width: 296px; max-width: min(92vw, 320px); padding: 12px;
+  background: var(--panel); border: 1px solid var(--line2); border-radius: 16px;
+  box-shadow: 0 18px 50px -12px #000000cc, 0 0 0 1px #00000040;
+  animation: odCalIn .14s ease;
+}
+.od-cal.od-cal-up { top: auto; bottom: calc(100% + 8px); }
+@keyframes odCalIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+.od-cal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;
+}
+.od-cal-title {
+  font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600;
+  color: var(--txt); text-transform: capitalize; letter-spacing: -.01em;
+}
+.od-cal-year { color: var(--muted); font-weight: 500; }
+.od-cal-nav {
+  display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto;
+  background: var(--card); border: 1px solid var(--line); border-radius: 9px;
+  color: var(--muted); cursor: pointer; transition: .12s;
+}
+.od-cal-nav:hover { color: var(--orange); border-color: var(--orange-dim); background: var(--orange-soft); }
+.od-cal-nav:active { transform: scale(.94); }
+
+.od-cal-wd {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px;
+}
+.od-cal-wd span {
+  text-align: center; font-size: 10.5px; letter-spacing: .04em; padding: 4px 0;
+  color: var(--faint); font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+}
+.od-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.od-cal-empty { aspect-ratio: 1; }
+.od-cal-day {
+  position: relative;
+  display: grid; place-items: center; aspect-ratio: 1; width: 100%;
+  background: transparent; border: none; border-radius: 9px;
+  color: var(--txt); font-family: 'JetBrains Mono', monospace; font-size: 13.5px;
+  cursor: pointer; transition: background .1s, color .1s;
+}
+.od-cal-day:hover { background: var(--card); }
+.od-cal-day.is-today { color: var(--orange); font-weight: 700; }
+.od-cal-day.is-today::after {
+  content: ""; position: absolute; margin-top: 15px; width: 4px; height: 4px;
+  border-radius: 50%; background: var(--orange);
+}
+.od-cal-day.is-sel,
+.od-cal-day.is-sel:hover {
+  background: linear-gradient(135deg, #ff8f4d, var(--orange));
+  color: #1a0f06; font-weight: 700; box-shadow: 0 3px 12px var(--orange-soft);
+}
+.od-cal-day.is-sel.is-today { color: #1a0f06; }
+.od-cal-day.is-sel.is-today::after { display: none; }
+
+.od-cal-foot {
+  display: flex; justify-content: flex-end; margin-top: 8px;
+  padding-top: 8px; border-top: 1px solid var(--line);
+}
+.od-cal-today {
+  background: transparent; border: none; color: var(--orange); cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600;
+  letter-spacing: .04em; padding: 5px 10px; border-radius: 8px; transition: .12s;
+}
+.od-cal-today:hover { background: var(--orange-soft); }
 .od-preview { height: 46px; display: flex; align-items: center; padding: 0 14px; background: var(--bg); border: 1px dashed var(--green); border-radius: 11px; color: var(--green); font-weight: 600; }
 /* Zisk v Rychlém zápisu = vypočtený výsledek, ne vstupní pole */
 .od-profit-readout {
@@ -455,9 +601,22 @@ html, body { margin: 0; padding: 0; background: #141210; }
   border-radius: 6px; padding: 1px 7px; margin: 0 1px; font-family: 'JetBrains Mono', monospace;
   font-size: .88em; font-weight: 700;
 }
+/* Vylepšený empty state s výzvou k akci (CTA) */
+.od-empty-cta { gap: 6px; padding: 40px 16px; }
+.od-empty-cta .od-empty-ico {
+  display: grid; place-items: center; width: 60px; height: 60px; border-radius: 18px;
+  margin-bottom: 6px; color: var(--orange);
+  background: linear-gradient(150deg, rgba(244, 113, 30, .18), var(--card) 70%);
+  border: 1px solid var(--orange-dim);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 8px 24px rgba(244, 113, 30, .12);
+}
+.od-empty-cta .od-empty-ico svg { color: var(--orange); }
+.od-empty-cta .od-empty-title { color: var(--txt); font-weight: 700; font-size: 16.5px; letter-spacing: -.01em; }
+.od-empty-cta .od-empty-sub { color: var(--muted); font-size: 13.5px; line-height: 1.55; max-width: 320px; }
+.od-empty-cta .od-add { margin-top: 12px; }
 
 /* FAB (mobile only) */
-.od-fab, .od-fab-menu { display: none; }
+.od-fab, .od-fab-menu, .od-fab-fuel { display: none; }
 
 /* RESPONSIVE */
 .od-backdrop { display: none; }
@@ -522,6 +681,17 @@ html, body { margin: 0; padding: 0; background: #141210; }
   }
   .od-fab-menu:hover { background: var(--panel2); border-color: var(--orange); color: var(--orange); }
   .od-fab-menu:active { transform: scale(0.94); }
+  /* Sekundární akce „Přidat tankování" – kruh nad hlavním FABem */
+  .od-fab-fuel {
+    display: inline-flex; align-items: center; justify-content: center;
+    position: fixed; right: 18px; bottom: calc(18px + 54px + 14px + env(safe-area-inset-bottom, 0px));
+    width: 54px; height: 54px; border-radius: 50%; cursor: pointer;
+    background: var(--card); color: var(--orange); border: 1px solid var(--orange-dim); z-index: 50;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .5);
+    transition: transform .15s ease, background .13s, border-color .13s, filter .13s;
+  }
+  .od-fab-fuel:hover { background: var(--panel2); border-color: var(--orange); }
+  .od-fab-fuel:active { transform: scale(0.94); }
 }
 @media (max-width: 620px) {
   .od-kpis { grid-template-columns: 1fr; }
@@ -560,7 +730,8 @@ html, body { margin: 0; padding: 0; background: #141210; }
   .od-modal.od-modal-wide .od-field { gap: 9px; }
   .od-modal.od-modal-wide .od-field label { font-size: 12.5px; }
   /* Vstupní pole (datum, částka) stejně velká */
-  .od-modal.od-modal-wide .od-field input { height: 54px; font-size: 17px; border-radius: 14px; }
+  .od-modal.od-modal-wide .od-field input,
+  .od-modal.od-modal-wide .od-field .od-date-trigger { height: 54px; font-size: 17px; border-radius: 14px; }
   .od-modal.od-modal-wide .od-profit-readout { padding: 14px; border-radius: 14px; }
   .od-modal.od-modal-wide .od-profit-label { font-size: 13px; }
   .od-modal.od-modal-wide .od-profit-val { font-size: 17px; }
@@ -581,10 +752,8 @@ html, body { margin: 0; padding: 0; background: #141210; }
   /* Výchozí: měsíce schované, tabulka přes celou šířku (jeden datový sloupec) */
   .od-summary { min-width: 0; width: 100%; }
   .od-summary .mc { display: none; }
-  .od-summary.m-year .av { display: none; }
-  .od-summary.m-avg .yr { display: none; }
-  /* Měsíce: zobraz jen vybraný měsíc (Rok + Ø měs. schované) */
-  .od-summary.m-months .yr, .od-summary.m-months .av { display: none; }
+  /* Měsíce: zobraz jen vybraný měsíc (Rok schovaný) */
+  .od-summary.m-months .yr { display: none; }
   .od-summary.m-months.sel-0 .mc-0,
   .od-summary.m-months.sel-1 .mc-1,
   .od-summary.m-months.sel-2 .mc-2,
@@ -597,7 +766,7 @@ html, body { margin: 0; padding: 0; background: #141210; }
   .od-summary.m-months.sel-9 .mc-9,
   .od-summary.m-months.sel-10 .mc-10,
   .od-summary.m-months.sel-11 .mc-11 { display: table-cell; }
-  .od-summary .yr, .od-summary thead th.yr, .od-summary .av, .od-summary thead th.av { font-size: 14px; }
+  .od-summary .yr, .od-summary thead th.yr { font-size: 14px; }
   /* Sloupec „Rok" na mobilu bez oranžového zvýraznění */
   .od-summary td.yr { background: transparent; color: var(--txt); }
   .od-summary td.yr.profit { color: var(--green); }

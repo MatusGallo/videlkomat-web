@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { MonthStat, View } from "../types";
 import { MONTHS, CURRENT_MONTH, CURRENT_YEAR } from "../constants";
 import { useSettings } from "../utils/SettingsContext";
-import { Logo, X, LayoutDashboard, CalendarDays, Plus, LogOut, ChevronDown } from "../icons";
+import { Logo, X, LayoutDashboard, CalendarDays, Plus, LogOut, ChevronDown, Fuel } from "../icons";
 import { logout } from "./PasswordGate";
 
 type YearGroup = { year: number; months: MonthStat[]; activeMonths: number[] };
@@ -14,11 +14,12 @@ type Props = {
   onClose: () => void;
   yearGroups: YearGroup[];
   onQuickAdd: () => void;
+  onFuelAdd: () => void;
 };
 
 export function Sidebar({
   view, go, open, onClose,
-  yearGroups, onQuickAdd,
+  yearGroups, onQuickAdd, onFuelAdd,
 }: Props) {
   const { settings } = useSettings();
   const [openYears, setOpenYears] = useState<Set<number>>(() => new Set([CURRENT_YEAR]));
@@ -47,12 +48,22 @@ export function Sidebar({
         <Plus size={16} /> Rychlý zápis <span className="od-kbd">N</span>
       </button>
 
+      <button className="od-quick-btn od-quick-btn-fuel" onClick={onFuelAdd} title="Tankování (T)">
+        <Fuel size={16} /> Tankování <span className="od-kbd">T</span>
+      </button>
+
       <nav className="od-nav">
         <button
           className={"od-nav-item" + (view === "dashboard" ? " is-active" : "")}
           onClick={() => go("dashboard")}
         >
           <LayoutDashboard size={18} /> <span>Souhrn {settings.selectedYear}</span>
+        </button>
+        <button
+          className={"od-nav-item" + (view === "fuel" ? " is-active" : "")}
+          onClick={() => go("fuel")}
+        >
+          <Fuel size={18} /> <span>Tankování</span>
         </button>
         {yearGroups.map((g) => {
           const isOpen = openYears.has(g.year);

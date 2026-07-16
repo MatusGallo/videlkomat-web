@@ -1,27 +1,32 @@
 import { useMemo, useState } from "react";
-import type { Entry, Stats, TrendMode, TrendPoint } from "../types";
-import { MONTHS, MONTHS_SHORT, CURRENT_MONTH, CURRENT_YEAR, PROFIT_RATE, PROFIT_PCT, VAT_RATE, VAT_PCT } from "../constants";
+import type { Entry, Fuel, Stats, TrendMode, TrendPoint } from "../types";
+import { MONTHS, MONTHS_SHORT, CURRENT_MONTH, CURRENT_YEAR, PROFIT_RATE, PROFIT_PCT, FUEL_COST_RATE, VAT_RATE, VAT_PCT } from "../constants";
 import { czk, dateLabel, parseAmount, todayISO } from "../utils/format";
 import { dayStat, monthChange, periodOf } from "../utils/stats";
 import { useSettings } from "../utils/SettingsContext";
 import { useRowEdit } from "../hooks/useRowEdit";
-import { Truck, Banknote, TrendingUp } from "../icons";
+import { Truck, Banknote, TrendingUp, Fuel as FuelIcon, Wallet, Plus } from "../icons";
 import { Kpi } from "./Kpi";
 import { LineTrend } from "./LineTrend";
 import { ActivityHeatmap } from "./ActivityHeatmap";
 import { SummaryTable } from "./SummaryTable";
 import { AmountInput, DateInput, RowActions } from "./RowActions";
+import { FuelRecords } from "./FuelRecords";
 import { Dropdown } from "./Dropdown";
 
 type Props = {
   stats: Stats;
   entries: Entry[];
+  fuels: Fuel[];
   activeMonths: number[];
   onEdit: (id: string, amount: number, date?: string) => void;
   onRequestDelete: (entry: Entry) => void;
+  onEditFuel: (id: string, amount: number, date: string, liters: number | null) => void;
+  onRequestDeleteFuel: (fuel: Fuel) => void;
+  onAddFuel: () => void;
 };
 
-export function Dashboard({ stats, entries, activeMonths, onEdit, onRequestDelete }: Props) {
+export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onRequestDelete, onEditFuel, onRequestDeleteFuel, onAddFuel }: Props) {
   const { settings } = useSettings();
   const year = stats.year;
   const months = stats.months;
@@ -36,9 +41,16 @@ export function Dashboard({ stats, entries, activeMonths, onEdit, onRequestDelet
         .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
     [yearEntries],
   );
-  const visible = filtered.slice(0, 20);
+  const visible = filtered.slice(0, 10);
+  const yearFuels = fuels.filter((f) => periodOf(f.date).y === settings.selectedYear);
 
   const day = useMemo(() => dayStat(entries, todayISO()), [entries]);
+  const todayFuelCost = useMemo(() => {
+    const t = todayISO();
+    return fuels.filter((f) => f.date === t).reduce((s, f) => s + f.amount, 0) * FUEL_COST_RATE;
+  }, [fuels]);
+  const todayProfit = day.total * PROFIT_RATE;
+  const todayNet = todayProfit - todayFuelCost;
 
   // V dropdownu: měsíce se záznamy + (u aktuálního roku) aktuální a budoucí měsíce.
   // Minulé prázdné měsíce vynecháme – nikdy v nich žádný zápis nebude.
@@ -125,13 +137,19 @@ export function Dashboard({ stats, entries, activeMonths, onEdit, onRequestDelet
 
       <div className="od-kpis-solo">
         <Kpi
-          label="Dnešní zisk"
-          value={czk(day.total * PROFIT_RATE)}
+          label={todayFuelCost > 0 ? "Dnešní zisk po palivu" : "Dnešní zisk"}
+          value={czk(todayFuelCost > 0 ? todayNet : todayProfit)}
           accent
           change={day.total > 0 ? day.change : undefined}
           changeLabel="vs. předchozí den"
-          extraFoot={day.prevDate ? `Předchozí den: ${czk(day.prev * PROFIT_RATE)}` : undefined}
-          foot={day.total === 0 ? "zatím dnes žádný zápis" : undefined}
+          extraFoot={
+            todayFuelCost > 0
+              ? `Bez paliva: ${czk(todayProfit)} (− ${czk(todayFuelCost)} palivo)`
+              : day.prevDate
+                ? `Předchozí den: ${czk(day.prev * PROFIT_RATE)}`
+                : undefined
+          }
+          foot={day.total === 0 && todayFuelCost === 0 ? "zatím dnes žádný zápis" : undefined}
         />
       </div>
 
@@ -150,7 +168,7 @@ export function Dashboard({ stats, entries, activeMonths, onEdit, onRequestDelet
         />
       </div>
 
-      <div className="od-kpis">
+      <div className="od-kpis od-kpis-fuel">
         <Kpi
           label="Celkový obrat"
           value={czk(month.total)}
@@ -172,6 +190,25 @@ export function Dashboard({ stats, entries, activeMonths, onEdit, onRequestDelet
           unit="zásahů"
           icon={<Truck size={18} />}
           change={monthChange(months, monthInView, (m) => m.count)}
+        />
+        <Kpi
+          label="Palivo"
+          value={czk(month.fuelCost)}
+          icon={<FuelIcon size={18} />}
+          change={monthChange(months, monthInView, (m) => m.fuelCost)}
+          foot={month.fuelTotal === 0 ? "žádné tankování v měsíci" : undefined}
+          extraFoot={month.fuelTotal > 0 ? `Natankováno ${czk(month.fuelTotal)}` : undefined}
+        />
+        <Kpi
+          label="Zisk po palivu"
+          value={czk(month.profit - month.fuelCost)}
+          icon={<Wallet size={18} />}
+          change={monthChange(months, monthInView, (m) => m.profit - m.fuelCost)}
+          extraFoot={
+            month.fuelCost > 0
+              ? `Čistý zisk ${czk(month.profit)} − palivo ${czk(month.fuelCost)}`
+              : "žádné palivo v měsíci"
+          }
         />
       </div>
 
@@ -233,60 +270,91 @@ export function Dashboard({ stats, entries, activeMonths, onEdit, onRequestDelet
         <div className="od-panel-head"><div className="od-panel-title">Roční souhrn</div></div>
         <SummaryTable shown={shown} year={year} active={active} activeMonths={activeMonths} />
         <p className="od-note">
-          <b>Rok</b> = součet (u průměrů celkový průměr). <b>Ø měs.</b> = průměr z měsíců se záznamy ({active} z {activeMonths.length}).
+          <b>Rok</b> = součet (u průměrů celkový průměr). <b>Měsíční průměr</b> = z měsíců se záznamy ({active} z {activeMonths.length}).
         </p>
       </section>
 
-      <section className="od-panel">
-        <div className="od-panel-head">
-          <div className="od-panel-title">Záznamy</div>
-        </div>
-        {visible.length === 0 ? (
-          <div className="od-empty">
-            <Truck size={34} />
-            <span>Zatím žádné zásahy. Stiskni <b>N</b> pro rychlý zápis.</span>
+      <div className="od-records-split">
+        <section className="od-panel">
+          <div className="od-panel-head">
+            <div className="od-panel-title">Zásahy</div>
           </div>
-        ) : (
-          <div className="od-table-wrap">
-            <table className="od-table">
-              <thead>
-                <tr>
-                  <th>Datum</th>
-                  <th>Měsíc</th>
-                  <th className="r">Částka</th>
-                  <th className="r">Zisk {PROFIT_PCT} %</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map((e) => {
-                  const editing = ed.editId === e.id;
-                  const prev = editing ? parseAmount(ed.editVal) || 0 : e.amount;
-                  const monthIdx = editing ? periodOf(ed.editDate).m : periodOf(e.date).m;
-                  return (
-                    <tr key={e.id}>
-                      <td className="mono">
-                        {editing ? <DateInput ed={ed} /> : dateLabel(e.date)}
-                      </td>
-                      <td>{MONTHS[Number.isFinite(monthIdx) ? monthIdx : periodOf(e.date).m]}</td>
-                      <td className="r mono strong">
-                        {editing ? <AmountInput ed={ed} /> : czk(e.amount)}
-                      </td>
-                      <td className="r mono profit">{czk(prev * PROFIT_RATE)}</td>
-                      <td className="r">
-                        <RowActions e={e} ed={ed} onRequestDelete={onRequestDelete} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          {visible.length === 0 ? (
+            <div className="od-empty">
+              <Truck size={34} />
+              <span>Zatím žádné zásahy. Stiskni <b>N</b> pro rychlý zápis.</span>
+            </div>
+          ) : (
+            <div className="od-table-wrap">
+              <table className="od-table">
+                <thead>
+                  <tr>
+                    <th>Datum</th>
+                    <th>Měsíc</th>
+                    <th className="r">Částka</th>
+                    <th className="r">Zisk {PROFIT_PCT} %</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((e) => {
+                    const editing = ed.editId === e.id;
+                    const prev = editing ? parseAmount(ed.editVal) || 0 : e.amount;
+                    const monthIdx = editing ? periodOf(ed.editDate).m : periodOf(e.date).m;
+                    return (
+                      <tr key={e.id}>
+                        <td className="mono">
+                          {editing ? <DateInput ed={ed} /> : dateLabel(e.date)}
+                        </td>
+                        <td>{MONTHS[Number.isFinite(monthIdx) ? monthIdx : periodOf(e.date).m]}</td>
+                        <td className="r mono strong">
+                          {editing ? <AmountInput ed={ed} /> : czk(e.amount)}
+                        </td>
+                        <td className="r mono profit">{czk(prev * PROFIT_RATE)}</td>
+                        <td className="r">
+                          <RowActions e={e} ed={ed} onRequestDelete={onRequestDelete} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {filtered.length > visible.length && (
+            <p className="od-note">Zobrazeno {visible.length} z {filtered.length} záznamů.</p>
+          )}
+        </section>
+
+        <section className="od-panel">
+          <div className="od-panel-head">
+            <div className="od-panel-title">Palivo</div>
           </div>
-        )}
-        {filtered.length > visible.length && (
-          <p className="od-note">Zobrazeno {visible.length} z {filtered.length} záznamů.</p>
-        )}
-      </section>
+          {yearFuels.length === 0 ? (
+            <div className="od-empty od-empty-cta">
+              <div className="od-empty-ico"><FuelIcon size={26} /></div>
+              <div className="od-empty-title">Zatím žádné tankování</div>
+              <div className="od-empty-sub">
+                Zapiš, kolik jsi natankoval — 30 % si vezmeš jako svůj náklad.
+              </div>
+              <button className="od-add" onClick={onAddFuel}>
+                <Plus size={16} /> Přidat tankování
+              </button>
+            </div>
+          ) : (
+            <>
+              <FuelRecords
+                fuels={yearFuels}
+                onEdit={onEditFuel}
+                onRequestDelete={onRequestDeleteFuel}
+              />
+              {yearFuels.length > 10 && (
+                <p className="od-note">Zobrazeno 10 z {yearFuels.length} tankování.</p>
+              )}
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

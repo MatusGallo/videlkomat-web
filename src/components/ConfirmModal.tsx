@@ -1,16 +1,16 @@
-import type { Entry } from "../types";
 import { MONTHS } from "../constants";
 import { czk, dateLabel } from "../utils/format";
 import { periodOf } from "../utils/stats";
 import { AlertTriangle } from "../icons";
 
 type Props = {
-  entry: Entry | null;
+  entry: { date: string; amount: number } | null;
+  noun?: string;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
-export function ConfirmModal({ entry, onConfirm, onCancel }: Props) {
+export function ConfirmModal({ entry, noun = "zásah", onConfirm, onCancel }: Props) {
   if (!entry) return null;
   return (
     <div className="od-modal-wrap" onClick={onCancel}>
@@ -18,7 +18,7 @@ export function ConfirmModal({ entry, onConfirm, onCancel }: Props) {
         <div className="od-modal-ico">
           <AlertTriangle size={22} />
         </div>
-        <h3>Smazat zásah?</h3>
+        <h3>Smazat {noun}?</h3>
         <p>
           {dateLabel(entry.date)} · {MONTHS[periodOf(entry.date).m]} · <b>{czk(entry.amount)}</b>
           <br />

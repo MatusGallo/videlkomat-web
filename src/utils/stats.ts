@@ -1,5 +1,5 @@
-import type { Entry, Stats, MonthStat, MoMChange } from "../types";
-import { CURRENT_YEAR, CURRENT_MONTH, PROFIT_RATE } from "../constants";
+import type { Entry, Fuel, Stats, MonthStat, MoMChange } from "../types";
+import { CURRENT_YEAR, CURRENT_MONTH, PROFIT_RATE, FUEL_COST_RATE } from "../constants";
 
 // Zápis patří do kalendářního měsíce svého data (celý měsíc, 1.–poslední den).
 // Vrací { y, m } – rok a 0-based index měsíce.
@@ -9,21 +9,31 @@ export function periodOf(iso: string): { y: number; m: number } {
   return { y, m: mo };
 }
 
-export function computeStats(entries: Entry[], year: number): Stats {
+export function computeStats(entries: Entry[], fuels: Fuel[], year: number): Stats {
   // Jeden průchod: každý zápis roztřídíme do jeho kalendářního měsíce.
   const buckets: Entry[][] = Array.from({ length: 12 }, () => []);
   for (const e of entries) {
     const p = periodOf(e.date);
     if (p.y === year) buckets[p.m].push(e);
   }
-  const months: MonthStat[] = buckets.map((list) => {
+  // Natankovaná suma po měsících (v rámci roku).
+  const fuelByMonth = Array.from({ length: 12 }, () => 0);
+  for (const f of fuels) {
+    const p = periodOf(f.date);
+    if (p.y === year) fuelByMonth[p.m] += f.amount;
+  }
+  const months: MonthStat[] = buckets.map((list, mi) => {
     const total = list.reduce((s, e) => s + e.amount, 0);
     const count = list.length;
     const profit = total * PROFIT_RATE;
+    const fuelTotal = fuelByMonth[mi];
+    const fuelCost = fuelTotal * FUEL_COST_RATE;
     const days = new Set(list.map((e) => e.date)).size;
     return {
       total,
       profit,
+      fuelTotal,
+      fuelCost,
       count,
       days,
       avgAmount: count ? total / count : 0,
@@ -35,15 +45,26 @@ export function computeStats(entries: Entry[], year: number): Stats {
   const count = months.reduce((s, m) => s + m.count, 0);
   const days = new Set(buckets.flatMap((list) => list.map((e) => e.date))).size;
   const profit = total * PROFIT_RATE;
+  const fuelTotal = fuelByMonth.reduce((s, v) => s + v, 0);
+  const fuelCost = fuelTotal * FUEL_COST_RATE;
   return {
     months,
-    year: { total, profit, count, days, avgProfitPerDay: days ? profit / days : 0 },
+    year: {
+      total,
+      profit,
+      fuelTotal,
+      fuelCost,
+      count,
+      days,
+      avgProfitPerDay: days ? profit / days : 0,
+    },
   };
 }
 
-export function availableYears(entries: Entry[]): number[] {
+export function availableYears(entries: Entry[], fuels: Fuel[] = []): number[] {
   const set = new Set<number>();
   entries.forEach((e) => set.add(periodOf(e.date).y));
+  fuels.forEach((f) => set.add(periodOf(f.date).y));
   set.add(CURRENT_YEAR);
   return Array.from(set).sort((a, b) => b - a);
 }

@@ -1,4 +1,4 @@
-import type { Entry } from "../types";
+import type { Entry, Fuel } from "../types";
 import { AUTH_PW_KEY } from "../components/PasswordGate";
 
 const headers = (): HeadersInit => ({
@@ -27,4 +27,27 @@ export async function apiDelete(id: string): Promise<void> {
     headers: headers(),
   });
   if (!r.ok) throw new Error(`DELETE /api/entries → ${r.status}`);
+}
+
+export async function fuelList(): Promise<Fuel[]> {
+  const r = await fetch("/api/fuel", { headers: headers() });
+  if (!r.ok) throw new Error(`GET /api/fuel → ${r.status}`);
+  return (await r.json()) as Fuel[];
+}
+
+export async function fuelUpsert(f: Fuel): Promise<void> {
+  const r = await fetch("/api/fuel", {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(f),
+  });
+  if (!r.ok) throw new Error(`POST /api/fuel → ${r.status}`);
+}
+
+export async function fuelDelete(id: string): Promise<void> {
+  const r = await fetch(`/api/fuel?id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+  if (!r.ok) throw new Error(`DELETE /api/fuel → ${r.status}`);
 }

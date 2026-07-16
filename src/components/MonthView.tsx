@@ -7,6 +7,7 @@ import { useRowEdit } from "../hooks/useRowEdit";
 import { Truck, Plus, Banknote, TrendingUp } from "../icons";
 import { Kpi } from "./Kpi";
 import { AmountInput, DateInput, RowActions } from "./RowActions";
+import { DateField } from "./DateField";
 
 type Props = {
   m: number;
@@ -91,7 +92,7 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
         <div className="od-form">
           <div className="od-field">
             <label>Datum</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <DateField value={date} onChange={setDate} />
           </div>
           <div className="od-field grow">
             <label>Celková částka (Kč)</label>
