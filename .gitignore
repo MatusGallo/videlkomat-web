@@ -26,3 +26,6 @@ Vid-lkomat/
 *.njsproj
 *.sln
 *.sw?
+
+# Impeccable skill artifacts
+.impeccable/

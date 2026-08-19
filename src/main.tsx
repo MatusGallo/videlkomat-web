@@ -14,3 +14,11 @@ createRoot(document.getElementById("root")!).render(
     </PasswordGate>
   </StrictMode>,
 );
+
+// PWA: service worker registrujeme jen v produkčním buildu (v dev by cache
+// překážela hot-reloadu). Chyby ignorujeme – appka funguje i bez SW.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

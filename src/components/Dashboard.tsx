@@ -24,9 +24,10 @@ type Props = {
   onEditFuel: (id: string, amount: number, date: string, liters: number | null) => void;
   onRequestDeleteFuel: (fuel: Fuel) => void;
   onAddFuel: () => void;
+  onAddEntry: () => void;
 };
 
-export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onRequestDelete, onEditFuel, onRequestDeleteFuel, onAddFuel }: Props) {
+export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onRequestDelete, onEditFuel, onRequestDeleteFuel, onAddFuel, onAddEntry }: Props) {
   const { settings } = useSettings();
   const year = stats.year;
   const months = stats.months;
@@ -240,9 +241,13 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
             </div>
           </>
         ) : (
-          <div className="od-empty">
-            <Truck size={34} />
-            <span>Zatím žádná data – přidej zásahy (stiskni <b>N</b>).</span>
+          <div className="od-empty od-empty-cta">
+            <div className="od-empty-ico"><Truck size={26} /></div>
+            <div className="od-empty-title">Zatím žádná data</div>
+            <div className="od-empty-sub">Přidej zásahy a uvidíš tu vývoj obratu a zisku.</div>
+            <button className="od-add" onClick={onAddEntry}>
+              <Plus size={16} /> Přidat zásah
+            </button>
           </div>
         )}
       </section>
@@ -280,9 +285,13 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
             <div className="od-panel-title">Zásahy</div>
           </div>
           {visible.length === 0 ? (
-            <div className="od-empty">
-              <Truck size={34} />
-              <span>Zatím žádné zásahy. Stiskni <b>N</b> pro rychlý zápis.</span>
+            <div className="od-empty od-empty-cta">
+              <div className="od-empty-ico"><Truck size={26} /></div>
+              <div className="od-empty-title">Zatím žádné zásahy</div>
+              <div className="od-empty-sub">Přidej první zásah pro tento rok.</div>
+              <button className="od-add" onClick={onAddEntry}>
+                <Plus size={16} /> Přidat zásah
+              </button>
             </div>
           ) : (
             <div className="od-table-wrap">

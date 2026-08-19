@@ -44,8 +44,8 @@ export function Sidebar({
         </button>
       </div>
 
-      <button className="od-quick-btn" onClick={onQuickAdd} title="Rychlý zápis (N)">
-        <Plus size={16} /> Rychlý zápis <span className="od-kbd">N</span>
+      <button className="od-quick-btn" onClick={onQuickAdd} title="Zásah (N)">
+        <Plus size={16} /> Zásah <span className="od-kbd">N</span>
       </button>
 
       <button className="od-quick-btn od-quick-btn-fuel" onClick={onFuelAdd} title="Tankování (T)">

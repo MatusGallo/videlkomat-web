@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Entry, Fuel, View } from "./types";
 import { loadEntries, saveEntries, loadFuels, saveFuels } from "./utils/storage";
 import { apiList, apiUpsert, apiDelete, fuelList, fuelUpsert, fuelDelete } from "./utils/api";
@@ -11,9 +11,11 @@ import { Dashboard } from "./components/Dashboard";
 import { MonthView } from "./components/MonthView";
 import { FuelView } from "./components/FuelView";
 import { ConfirmModal } from "./components/ConfirmModal";
-import { QuickAddModal } from "./components/QuickAddModal";
-import { FuelModal } from "./components/FuelModal";
-import { Logo, Menu, Plus, Fuel as FuelIcon } from "./icons";
+import { AddModal } from "./components/AddModal";
+import { TabBar } from "./components/TabBar";
+import { MenuView } from "./components/MenuView";
+import { MobileTitleBar } from "./components/MobileTitleBar";
+import { Logo, Menu } from "./icons";
 
 export default function App() {
   const { settings, setSelectedYear } = useSettings();
@@ -23,8 +25,12 @@ export default function App() {
   const [navOpen, setNavOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Entry | null>(null);
   const [pendingDeleteFuel, setPendingDeleteFuel] = useState<Fuel | null>(null);
-  const [quickOpen, setQuickOpen] = useState(false);
-  const [fuelOpen, setFuelOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addMode, setAddMode] = useState<"entry" | "fuel">("entry");
+  const openAdd = (mode: "entry" | "fuel") => {
+    setAddMode(mode);
+    setAddOpen(true);
+  };
 
   // Aktualizuj UI + lokální cache okamžitě (optimistic update).
   const cache = (next: Entry[]) => {
@@ -151,20 +157,17 @@ export default function App() {
       const isInput = tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
       if ((e.key === "n" || e.key === "N") && !e.ctrlKey && !e.metaKey && !e.altKey && !isInput) {
         e.preventDefault();
-        setQuickOpen(true);
+        openAdd("entry");
       }
       if ((e.key === "t" || e.key === "T") && !e.ctrlKey && !e.metaKey && !e.altKey && !isInput) {
         e.preventDefault();
-        setFuelOpen(true);
+        openAdd("fuel");
       }
       if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
         e.preventDefault();
-        setQuickOpen(true);
+        openAdd("entry");
       }
-      if (e.key === "Escape") {
-        setQuickOpen(false);
-        setFuelOpen(false);
-      }
+      if (e.key === "Escape") setAddOpen(false);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -174,10 +177,34 @@ export default function App() {
     if (year !== undefined && year !== settings.selectedYear) setSelectedYear(year);
     setView(v);
     setNavOpen(false);
+    // Nová stránka začíná nahoře (jinak by přebrala scroll předchozí a large-title
+    // by byl sbalený).
+    window.scrollTo(0, 0);
+  };
+
+  // Menu je přepínač: otevře stránku Menu, a je-li otevřená, vrátí na předchozí pohled.
+  const prevViewRef = useRef<View>("dashboard");
+  const toggleMenu = () => {
+    if (view === "menu") go(prevViewRef.current);
+    else {
+      prevViewRef.current = view;
+      go("menu");
+    }
   };
 
   return (
     <div className="od-app">
+      {(view === "dashboard" || view === "menu" || view === "fuel") && (
+        <MobileTitleBar
+          title={
+            view === "menu"
+              ? "Menu"
+              : view === "fuel"
+                ? `Tankování ${settings.selectedYear}`
+                : `Souhrn ${settings.selectedYear}`
+          }
+        />
+      )}
       <div className="od-topbar">
         <button className="od-burger" onClick={() => setNavOpen(true)}>
           <Menu size={20} />
@@ -195,8 +222,8 @@ export default function App() {
           open={navOpen}
           onClose={() => setNavOpen(false)}
           yearGroups={yearGroups}
-          onQuickAdd={() => setQuickOpen(true)}
-          onFuelAdd={() => setFuelOpen(true)}
+          onQuickAdd={() => openAdd("entry")}
+          onFuelAdd={() => openAdd("fuel")}
         />
         <main className="od-main">
           {view === "dashboard" ? (
@@ -209,16 +236,19 @@ export default function App() {
               onRequestDelete={setPendingDelete}
               onEditFuel={updateFuel}
               onRequestDeleteFuel={setPendingDeleteFuel}
-              onAddFuel={() => setFuelOpen(true)}
+              onAddFuel={() => openAdd("fuel")}
+              onAddEntry={() => openAdd("entry")}
             />
           ) : view === "fuel" ? (
             <FuelView
               fuels={fuels.filter((f) => periodOf(f.date).y === settings.selectedYear)}
               year={settings.selectedYear}
-              onAddClick={() => setFuelOpen(true)}
+              onAddClick={() => openAdd("fuel")}
               onEdit={updateFuel}
               onRequestDelete={setPendingDeleteFuel}
             />
+          ) : view === "menu" ? (
+            <MenuView view={view} go={go} yearGroups={yearGroups} />
           ) : (
             <MonthView
               m={view}
@@ -258,44 +288,20 @@ export default function App() {
         }}
       />
 
-      <QuickAddModal
-        open={quickOpen}
-        onClose={() => setQuickOpen(false)}
-        onAdd={addEntry}
+      <AddModal
+        open={addOpen}
+        initialMode={addMode}
+        onClose={() => setAddOpen(false)}
+        onAddEntry={addEntry}
+        onAddFuel={addFuel}
       />
 
-      <FuelModal
-        open={fuelOpen}
-        onClose={() => setFuelOpen(false)}
-        onAdd={addFuel}
+      <TabBar
+        view={view}
+        onGo={(v) => go(v)}
+        onAdd={() => openAdd("entry")}
+        onMenu={toggleMenu}
       />
-
-      <button
-        className="od-fab-menu"
-        onClick={() => setNavOpen(true)}
-        aria-label="Otevřít menu"
-        title="Menu"
-      >
-        <Menu size={22} />
-      </button>
-
-      <button
-        className="od-fab-fuel"
-        onClick={() => setFuelOpen(true)}
-        aria-label="Přidat tankování"
-        title="Přidat tankování"
-      >
-        <FuelIcon size={22} />
-      </button>
-
-      <button
-        className="od-fab"
-        onClick={() => setQuickOpen(true)}
-        aria-label="Přidat zásah"
-        title="Přidat zásah"
-      >
-        <Plus size={20} /> <span>Přidat zásah</span>
-      </button>
     </div>
   );
 }

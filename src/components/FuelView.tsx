@@ -89,9 +89,11 @@ export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: P
       <section className="od-panel">
         <div className="od-panel-head">
           <div className="od-panel-title">Záznamy tankování</div>
-          <button className="od-add" onClick={onAddClick}>
-            <Plus size={16} /> Přidat tankování
-          </button>
+          {sorted.length > 0 && (
+            <button className="od-add" onClick={onAddClick}>
+              <Plus size={16} /> Přidat tankování
+            </button>
+          )}
         </div>
         {sorted.length === 0 ? (
           <div className="od-empty od-empty-cta">

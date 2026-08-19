@@ -42,7 +42,7 @@ export type Stats = {
   year: YearStat;
 };
 
-export type View = "dashboard" | "fuel" | number;
+export type View = "dashboard" | "fuel" | "menu" | number;
 
 export type MoMChange = { pct: number; up: boolean } | null;
 

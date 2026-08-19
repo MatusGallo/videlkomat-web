@@ -3,7 +3,7 @@ import { AUTH_PW_KEY } from "../components/PasswordGate";
 
 const headers = (): HeadersInit => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${sessionStorage.getItem(AUTH_PW_KEY) ?? ""}`,
+  Authorization: `Bearer ${localStorage.getItem(AUTH_PW_KEY) ?? ""}`,
 });
 
 export async function apiList(): Promise<Entry[]> {
