@@ -299,7 +299,7 @@ export default function App() {
       <TabBar
         view={view}
         onGo={(v) => go(v)}
-        onAdd={() => openAdd("entry")}
+        onAdd={() => openAdd(view === "fuel" ? "fuel" : "entry")}
         onMenu={toggleMenu}
       />
     </div>
