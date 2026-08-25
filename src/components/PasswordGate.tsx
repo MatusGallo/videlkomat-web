@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { LoginBackground } from "./LoginBackground";
 
 const HASH = "7e11bc65a7852d1c5833549ad3a1bbc743deac167c2f18ae11b7b2784dd8d00d";
 export const AUTH_KEY = "vydelkomat_auth_v1";
@@ -75,17 +76,6 @@ async function sha256(text: string): Promise<string> {
   return sha256Js(bytes);
 }
 
-// Ambientní „stěna výdělků" na pozadí – jen dekorace, žádná reálná data.
-const AMOUNTS = [
-  "1 250", "3 400", "890", "12 000", "2 150", "540", "7 800", "4 300",
-  "990", "15 600", "320", "6 050", "2 780", "8 900", "460", "3 120",
-  "5 400", "1 070", "9 250", "740", "11 300", "2 640", "600", "4 880",
-];
-// 7 sloupců, každý s vlastní rotací pořadí, aby se čísla neopakovala v řadě.
-const RAIN_COLUMNS: string[][] = Array.from({ length: 7 }, (_, c) =>
-  Array.from({ length: 13 }, (_, r) => AMOUNTS[(c * 5 + r * 3) % AMOUNTS.length] + " Kč"),
-);
-
 export function PasswordGate({ children }: { children: ReactNode }) {
   const [authed, setAuthed] = useState<boolean>(() => localStorage.getItem(AUTH_KEY) === "1");
   const [val, setVal] = useState("");
@@ -143,91 +133,72 @@ export function PasswordGate({ children }: { children: ReactNode }) {
   return (
     <>
     <div className="vk-bg" aria-hidden="true">
-      <div className="vk-aurora" aria-hidden="true">
-        <span className="a1" />
-        <span className="a2" />
-        <span className="a3" />
-      </div>
-      <div className="vk-rain" aria-hidden="true">
-        {RAIN_COLUMNS.map((col, i) => (
-          <div
-            className="vk-rain-col"
-            key={i}
-            style={{
-              // Deterministické, ale rozházené rychlosti/posuny podle sloupce.
-              ["--dur" as string]: `${26 + (i % 5) * 7}s`,
-              ["--delay" as string]: `-${(i * 6.5) % 30}s`,
-            }}
-          >
-            <div className="vk-rain-track">
-              {col.concat(col).map((amt, j) => (
-                <span key={j} className={j % 4 === 2 ? "up" : undefined}>
-                  {amt}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="vk-spot" aria-hidden="true" />
+      <LoginBackground color="#f4711e" className="vk-dots" />
     </div>
 
     <div className="vk-gate" ref={gateRef}>
       <main className="vk-stage">
-        <div className="vk-logo"><img className="vk-logo-img" src="/icon.svg" alt="Vydělkomat" /></div>
-        <h1 className="vk-title">Vydělkomat</h1>
-        <p className="vk-sub">Zadej heslo a pokračuj ke&nbsp;svým výdělkům.</p>
+        <div className="vk-card">
+          <div className="vk-card-brand">
+            <img className="vk-card-logo" src="/icon.svg" alt="" />
+            <span className="vk-card-name">Vydělkomat</span>
+          </div>
 
-        <div className={"vk-line" + (err ? " is-err" : "")}>
-          <input
-            ref={ref}
-            className="vk-input"
-            type={show ? "text" : "password"}
-            placeholder="Heslo"
-            value={val}
-            onChange={(e) => {
-              setVal(e.target.value);
-              if (err) setErr(false);
-            }}
-            onKeyDown={(e) => e.key === "Enter" && val && !pending && submit()}
-            autoComplete="current-password"
-          />
-          <button
-            type="button"
-            className="vk-eye"
-            onClick={() => {
-              setShow((s) => !s);
-              ref.current?.focus({ preventScroll: true });
-            }}
-            aria-label={show ? "Skrýt heslo" : "Zobrazit heslo"}
-            aria-pressed={show}
-            tabIndex={-1}
-          >
-            {show ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                <path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                <line x1="2" x2="22" y1="2" y2="22" />
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            )}
-          </button>
+          <div className="vk-card-inner">
+            <h1 className="vk-title">Vítejte zpět!</h1>
+            <p className="vk-sub">Zadej heslo a pokračuj ke&nbsp;svým výdělkům.</p>
+
+            <div className={"vk-line" + (err ? " is-err" : "")}>
+              <input
+                ref={ref}
+                className="vk-input"
+                type={show ? "text" : "password"}
+                placeholder="Heslo"
+                value={val}
+                onChange={(e) => {
+                  setVal(e.target.value);
+                  if (err) setErr(false);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && val && !pending && submit()}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="vk-eye"
+                onClick={() => {
+                  setShow((s) => !s);
+                  ref.current?.focus({ preventScroll: true });
+                }}
+                aria-label={show ? "Skrýt heslo" : "Zobrazit heslo"}
+                aria-pressed={show}
+                tabIndex={-1}
+              >
+                {show ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                    <path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                    <line x1="2" x2="22" y1="2" y2="22" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+
+            <button className="vk-go" onClick={submit} disabled={!val || pending}>
+              {pending ? <span className="vk-spin" aria-hidden="true" /> : null}
+              <span>{pending ? "Ověřuji…" : "Přihlásit se"}</span>
+            </button>
+
+            <p className={"vk-err" + (err ? " show" : "")} role="alert" aria-live="assertive">
+              Nesprávné heslo. Zkus to znovu.
+            </p>
+          </div>
         </div>
-
-        <button className="vk-go" onClick={submit} disabled={!val || pending}>
-          {pending ? <span className="vk-spin" aria-hidden="true" /> : null}
-          <span>{pending ? "Ověřuji…" : "Přihlásit se"}</span>
-        </button>
-
-        <p className={"vk-err" + (err ? " show" : "")} role="alert" aria-live="assertive">
-          Nesprávné heslo. Zkus to znovu.
-        </p>
       </main>
     </div>
     </>
