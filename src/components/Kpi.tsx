@@ -8,8 +8,6 @@ type Props = {
   value: string;
   unit?: string;
   icon?: ReactNode;
-  series?: number[];
-  nowIndex?: number;
   change?: MoMChange;
   changeLabel?: string;
   accent?: boolean;
@@ -17,9 +15,7 @@ type Props = {
   extraFoot?: string;
 };
 
-export function Kpi({ label, value, unit, icon, series = [], nowIndex, change, changeLabel = "vs. minulý měsíc", accent, foot, extraFoot }: Props) {
-  const max = Math.max(...series, 1);
-  const highlight = nowIndex ?? series.length - 1;
+export function Kpi({ label, value, unit, icon, change, changeLabel = "vs. minulý měsíc", accent, foot, extraFoot }: Props) {
   return (
     <div className={"od-kpi" + (accent ? " is-accent" : "")}>
       <div className="od-kpi-top">
@@ -27,17 +23,6 @@ export function Kpi({ label, value, unit, icon, series = [], nowIndex, change, c
           {icon && <span className="od-kpi-ico">{icon}</span>}
           <span className="od-kpi-label">{label}</span>
         </div>
-        {series.length > 0 && (
-          <div className="od-spark">
-            {series.map((v, i) => (
-              <span
-                key={i}
-                className={"od-spark-bar" + (i === highlight ? " now" : "")}
-                style={{ height: Math.max(8, (v / max) * 100) + "%" }}
-              />
-            ))}
-          </div>
-        )}
       </div>
       <div className="od-kpi-val mono">
         {value} {unit && <em>{unit}</em>}

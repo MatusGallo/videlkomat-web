@@ -4,7 +4,7 @@ import { MONTHS, CURRENT_MONTH, CURRENT_YEAR, PROFIT_RATE, PROFIT_PCT } from "..
 import { czk, dateLabel, groupAmount, parseAmount, todayISO, weekdayLabel, plural } from "../utils/format";
 import { useSettings } from "../utils/SettingsContext";
 import { useRowEdit } from "../hooks/useRowEdit";
-import { Truck, Plus, Banknote, TrendingUp } from "../icons";
+import { Truck, Plus, Banknote, TrendingUp, Wallet } from "../icons";
 import { Kpi } from "./Kpi";
 import { AmountInput, DateInput, RowActions } from "./RowActions";
 import { DateField } from "./DateField";
@@ -42,6 +42,21 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
   });
   const previewAmount = parseAmount(amount);
 
+  const kpiFuelProfit = (
+    <Kpi
+      key="fuel-profit"
+      label="Zisk po palivu"
+      value={czk(monthStat.profit - monthStat.fuelCost)}
+      icon={<Wallet size={18} />}
+      accent
+      foot={
+        monthStat.fuelCost > 0
+          ? `Čistý zisk ${czk(monthStat.profit)} − palivo ${czk(monthStat.fuelCost)}`
+          : "žádné palivo v měsíci"
+      }
+    />
+  );
+
   const submit = () => {
     const v = parseAmount(amount);
     if (v === null || v <= 0) {
@@ -60,21 +75,19 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
         <h1>{MONTHS[m]} {year}</h1>
       </div>
 
-      <div className="od-kpis">
+      <div className="od-kpis od-kpis-avg">
+        {kpiFuelProfit}
         <Kpi
           label="Celková částka"
           value={czk(monthStat.total)}
           icon={<Banknote size={18} />}
-          series={sorted.map((e) => e.amount)}
-          foot={"Ø " + czk(monthStat.avgAmount) + " / zásah"}
+          foot={"Ø " + czk(monthStat.avgAmount)}
         />
         <Kpi
           label="Čistý zisk"
           value={czk(monthStat.profit)}
           icon={<TrendingUp size={18} />}
-          series={sorted.map((e) => e.amount * PROFIT_RATE)}
-          accent
-          foot={"Ø " + czk(monthStat.avgProfit) + " / zásah"}
+          foot={"Ø " + czk(monthStat.avgProfit)}
           extraFoot={monthStat.days ? `Ø ${czk(monthStat.avgProfitPerDay)} / den (${monthStat.days} dní)` : undefined}
         />
         <Kpi
@@ -82,42 +95,43 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
           value={String(monthStat.count)}
           unit="zásahů"
           icon={<Truck size={18} />}
-          series={sorted.map((e) => e.amount)}
           foot={MONTHS[m] + " " + year}
         />
       </div>
 
-      <section className="od-panel">
-        <div className="od-panel-head"><div className="od-panel-title">Nový zásah</div></div>
-        <div className="od-form">
-          <div className="od-field">
-            <label>Datum</label>
-            <DateField value={date} onChange={setDate} />
-          </div>
-          <div className="od-field grow">
-            <label>Celková částka (Kč)</label>
-            <input
-              ref={ref}
-              type="text"
-              inputMode="decimal"
-              placeholder="např. 3 500"
-              value={amount}
-              onChange={(e) => setAmount(groupAmount(e.target.value))}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-            />
-          </div>
-          <div className="od-field">
-            <label>Zisk {PROFIT_PCT} %</label>
-            <div className="od-preview mono">
-              {previewAmount ? czk(previewAmount * PROFIT_RATE) : "–"}
+      {isCurrent && (
+        <section className="od-panel">
+          <div className="od-panel-head"><div className="od-panel-title">Nový zásah</div></div>
+          <div className="od-form">
+            <div className="od-field">
+              <label>Datum</label>
+              <DateField value={date} onChange={setDate} />
             </div>
+            <div className="od-field grow">
+              <label>Celková částka (Kč)</label>
+              <input
+                ref={ref}
+                type="text"
+                inputMode="decimal"
+                placeholder="např. 3 500"
+                value={amount}
+                onChange={(e) => setAmount(groupAmount(e.target.value))}
+                onKeyDown={(e) => e.key === "Enter" && submit()}
+              />
+            </div>
+            <div className="od-field">
+              <label>Zisk {PROFIT_PCT} %</label>
+              <div className="od-preview mono">
+                {previewAmount ? czk(previewAmount * PROFIT_RATE) : "–"}
+              </div>
+            </div>
+            <button className="od-add" onClick={submit}>
+              <Plus size={16} /> Přidat
+            </button>
           </div>
-          <button className="od-add" onClick={submit}>
-            <Plus size={16} /> Přidat
-          </button>
-        </div>
-        {err && <p className="od-err">{err}</p>}
-      </section>
+          {err && <p className="od-err">{err}</p>}
+        </section>
+      )}
 
       <section className="od-records">
         <div className="od-panel-head">

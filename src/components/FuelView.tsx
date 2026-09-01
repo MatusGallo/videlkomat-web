@@ -66,14 +66,12 @@ export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: P
           label="Natankováno celkem"
           value={czk(totalAmount)}
           icon={<FuelIcon size={18} />}
-          series={sorted.map((f) => f.amount)}
           foot={`${fuels.length} ${plural(fuels.length, "tankování", "tankování", "tankování")}`}
         />
         <Kpi
           label={`Můj náklad ${FUEL_COST_PCT} %`}
           value={czk(totalCost)}
           icon={<Banknote size={18} />}
-          series={sorted.map((f) => f.amount * FUEL_COST_RATE)}
           accent
           foot="odečítá se z čistého zisku"
         />
@@ -81,7 +79,6 @@ export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: P
           label="Ø cena za litr"
           value={avgPerLiter ? `${num1(avgPerLiter)} Kč/L` : "–"}
           icon={<Droplet size={18} />}
-          series={withLiters.map((f) => f.amount / (f.liters as number))}
           foot={litersSum > 0 ? `${num1(litersSum)} L celkem` : "zadej litry pro dopočet"}
         />
       </div>

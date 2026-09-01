@@ -320,12 +320,14 @@ html, body { margin: 0; padding: 0; background: #141210; }
   background: linear-gradient(165deg, rgba(244, 113, 30, .14), var(--card) 58%);
 }
 .od-kpi-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.od-kpi-lead { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.od-kpi-ico { display: grid; place-items: center; flex: 0 0 auto; color: var(--muted); }
+.od-kpi-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.od-kpi-ico {
+  display: grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px;
+  border-radius: var(--r-xs); background: var(--panel2); border: 1px solid var(--line);
+  color: var(--muted);
+}
+.od-kpi.is-accent .od-kpi-ico { color: var(--orange); background: var(--orange-soft); border-color: var(--orange-dim); }
 .od-kpi-label { font-size: 14px; letter-spacing: 0; color: var(--muted); font-family: var(--ui); font-weight: 500; }
-.od-spark { display: flex; align-items: flex-end; gap: 3px; height: 34px; }
-.od-spark-bar { width: 4px; border-radius: 2px; background: var(--orange-dim); min-height: 8px; }
-.od-spark-bar.now { background: linear-gradient(180deg, #ffae73, var(--orange)); box-shadow: 0 0 10px var(--orange-soft); }
 .od-kpi-val { font-size: clamp(24px, 3vw, 32px); font-weight: 700; margin: 14px 0 10px; }
 .od-kpi-val em { font-size: 14px; color: var(--muted); font-style: normal; font-weight: 500; }
 .od-kpi.is-accent .od-kpi-val { color: var(--orange); }
@@ -477,7 +479,6 @@ html, body { margin: 0; padding: 0; background: #141210; }
 .od-avg-sub { font-size: 12.5px; color: var(--faint); }
 .od-kpis-avg { grid-template-columns: repeat(4, 1fr); }
 @media (max-width: 1100px) { .od-kpis-avg { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .od-kpis-avg { grid-template-columns: 1fr; } }
 
 .od-badge {
   display: inline-flex; align-items: center; gap: 5px; background: var(--green-bg); color: var(--green);
@@ -1038,11 +1039,14 @@ html, body { margin: 0; padding: 0; background: #141210; }
 }
 @media (max-width: 620px) {
   .od-kpis { grid-template-columns: 1fr; }
+  .od-kpis.od-kpis-avg { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .od-add { width: 100%; justify-content: center; }
   .od-field { min-width: 100%; }
   .od-linewrap { height: 230px; }
   .od-panel { padding: 16px 14px; border-radius: var(--r-md); }
   .od-kpi { padding: 16px; }
+  .od-kpis.od-kpis-avg .od-kpi { padding: 14px 12px; }
+  .od-kpi-val { font-size: 20px; }
   .od-main { padding: calc(14px + env(safe-area-inset-top, 0px)) 14px calc(92px + env(safe-area-inset-bottom, 0px)); }
   .od-head h1 { font-size: 28px; }
   /* Větší dotykové cíle a klidnější rytmus na telefonu */
