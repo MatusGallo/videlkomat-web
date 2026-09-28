@@ -9,10 +9,9 @@ type Props = {
   onChange: (value: number) => void;
   ariaLabel?: string;
   className?: string;
-  align?: "left" | "right";
 };
 
-export function Dropdown({ value, options, onChange, ariaLabel, className, align = "left" }: Props) {
+export function Dropdown({ value, options, onChange, ariaLabel, className }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const current = options.find((o) => o.value === value);
@@ -47,7 +46,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, className, align
         <ChevronDown size={16} className="od-dd-chev" />
       </button>
       {open && (
-        <ul className={"od-dd-menu" + (align === "right" ? " r" : "")} role="listbox">
+        <ul className="od-dd-menu" role="listbox">
           {options.map((o) => (
             <li key={o.value} role="option" aria-selected={o.value === value}>
               <button

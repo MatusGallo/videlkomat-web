@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import type { Entry, Fuel, Stats, TrendMode, TrendPoint } from "../types";
-import { MONTHS, MONTHS_SHORT, CURRENT_MONTH, CURRENT_YEAR, PROFIT_RATE, PROFIT_PCT, FUEL_COST_RATE, VAT_RATE, VAT_PCT } from "../constants";
-import { czk, dateLabel, parseAmount, todayISO } from "../utils/format";
+import { MONTHS, MONTHS_SHORT, CURRENT_MONTH, CURRENT_YEAR, PROFIT_RATE, PROFIT_PCT, FUEL_COST_RATE, FUEL_RECORDS_LIMIT, VAT_RATE, VAT_PCT } from "../constants";
+import { byDateDesc, czk, dateLabel, parseAmount, todayISO } from "../utils/format";
 import { dayStat, monthChange, periodOf } from "../utils/stats";
-import { useSettings } from "../utils/SettingsContext";
+import { useSettings } from "../utils/settings";
 import { useRowEdit } from "../hooks/useRowEdit";
-import { Truck, Banknote, TrendingUp, Fuel as FuelIcon, Wallet, Plus } from "../icons";
+import { Truck, Banknote, TrendingUp, Fuel as FuelIcon, Wallet, Plus, CalendarDays, LayoutDashboard } from "../icons";
 import { Kpi } from "./Kpi";
+import { Panel } from "./Panel";
 import { LineTrend } from "./LineTrend";
 import { ActivityHeatmap } from "./ActivityHeatmap";
 import { SummaryTable } from "./SummaryTable";
@@ -34,16 +35,16 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
   const shown = activeMonths.map((i) => months[i]);
   const active = shown.filter((m) => m.count > 0).length;
   const ed = useRowEdit(onEdit);
-  const yearEntries = entries.filter((e) => periodOf(e.date).y === settings.selectedYear);
-  const filtered = useMemo(
-    () =>
-      yearEntries
-        .slice()
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
-    [yearEntries],
+  const yearEntries = useMemo(
+    () => entries.filter((e) => periodOf(e.date).y === settings.selectedYear),
+    [entries, settings.selectedYear],
   );
+  const filtered = useMemo(() => yearEntries.slice().sort(byDateDesc), [yearEntries]);
   const visible = filtered.slice(0, 10);
-  const yearFuels = fuels.filter((f) => periodOf(f.date).y === settings.selectedYear);
+  const yearFuels = useMemo(
+    () => fuels.filter((f) => periodOf(f.date).y === settings.selectedYear),
+    [fuels, settings.selectedYear],
+  );
 
   const day = useMemo(() => dayStat(entries, todayISO()), [entries]);
   const todayFuelCost = useMemo(() => {
@@ -62,8 +63,7 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
     }
     return Array.from(set).sort((a, b) => a - b);
   })();
-  const [selMonth, setSelMonth] = useState(CURRENT_MONTH);
-  const monthInView = selMonth >= 0 && selMonth <= 11 ? selMonth : CURRENT_MONTH;
+  const [monthInView, setSelMonth] = useState(CURRENT_MONTH);
   const month = months[monthInView];
 
   const [trendMode, setTrendMode] = useState<TrendMode>("days");
@@ -213,10 +213,10 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
         />
       </div>
 
-      <section className="od-panel">
-        <div className="od-panel-head">
-          <div className="od-panel-title">{trendTitle}</div>
-          <div className="od-panel-tools">
+      <Panel
+        title={trendTitle}
+        icon={<TrendingUp size={16} />}
+        tools={
             <div className="od-switch" role="tablist" aria-label="Režim grafu">
               {(["days", "months", "years"] as TrendMode[]).map((m) => (
                 <button
@@ -230,8 +230,8 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
                 </button>
               ))}
             </div>
-          </div>
-        </div>
+        }
+      >
         {hasTrendData ? (
           <>
             <LineTrend points={trendPoints} />
@@ -250,16 +250,13 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
             </button>
           </div>
         )}
-      </section>
+      </Panel>
 
-      <section className="od-panel">
-        <div className="od-panel-head" style={{ alignItems: "flex-start" }}>
-          <div>
-            <div className="od-panel-title">Aktivita</div>
-            <span style={{ fontSize: 13, fontWeight: 500, color: "var(--muted)" }}>
-              počet zásahů za den
-            </span>
-          </div>
+      <Panel
+        title="Aktivita"
+        icon={<CalendarDays size={16} />}
+        sub="počet zásahů za den"
+        tools={
           <span className="ah-legend">
             Méně
             {[0, 1, 2, 3, 4].map((l) => (
@@ -267,23 +264,20 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
             ))}
             Více
           </span>
-        </div>
+        }
+      >
         <ActivityHeatmap entries={entries} year={settings.selectedYear} />
-      </section>
+      </Panel>
 
-      <section className="od-panel">
-        <div className="od-panel-head"><div className="od-panel-title">Roční souhrn</div></div>
+      <Panel title="Roční souhrn" icon={<LayoutDashboard size={16} />}>
         <SummaryTable shown={shown} year={year} active={active} activeMonths={activeMonths} />
         <p className="od-note">
           <b>Rok</b> = součet (u průměrů celkový průměr). <b>Měsíční průměr</b> = z měsíců se záznamy ({active} z {activeMonths.length}).
         </p>
-      </section>
+      </Panel>
 
       <div className="od-records-split">
-        <section className="od-panel">
-          <div className="od-panel-head">
-            <div className="od-panel-title">Zásahy</div>
-          </div>
+        <Panel title="Zásahy" icon={<Truck size={16} />}>
           {visible.length === 0 ? (
             <div className="od-empty od-empty-cta">
               <div className="od-empty-ico"><Truck size={26} /></div>
@@ -333,12 +327,9 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
           {filtered.length > visible.length && (
             <p className="od-note">Zobrazeno {visible.length} z {filtered.length} záznamů.</p>
           )}
-        </section>
+        </Panel>
 
-        <section className="od-panel">
-          <div className="od-panel-head">
-            <div className="od-panel-title">Palivo</div>
-          </div>
+        <Panel title="Palivo" icon={<FuelIcon size={16} />}>
           {yearFuels.length === 0 ? (
             <div className="od-empty od-empty-cta">
               <div className="od-empty-ico"><FuelIcon size={26} /></div>
@@ -357,12 +348,12 @@ export function Dashboard({ stats, entries, fuels, activeMonths, onEdit, onReque
                 onEdit={onEditFuel}
                 onRequestDelete={onRequestDeleteFuel}
               />
-              {yearFuels.length > 10 && (
-                <p className="od-note">Zobrazeno 10 z {yearFuels.length} tankování.</p>
+              {yearFuels.length > FUEL_RECORDS_LIMIT && (
+                <p className="od-note">Zobrazeno {FUEL_RECORDS_LIMIT} z {yearFuels.length} tankování.</p>
               )}
             </>
           )}
-        </section>
+        </Panel>
       </div>
     </div>
   );

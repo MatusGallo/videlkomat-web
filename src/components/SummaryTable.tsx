@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react";
 import type { MonthStat, YearStat } from "../types";
 import { MONTHS, MONTHS_SHORT, CURRENT_MONTH, CURRENT_YEAR, PROFIT_PCT, FUEL_COST_PCT } from "../constants";
-import { useSettings } from "../utils/SettingsContext";
+import { useSettings } from "../utils/settings";
 import { czk, num1, plural } from "../utils/format";
 import { Dropdown } from "./Dropdown";
 import { Kpi } from "./Kpi";

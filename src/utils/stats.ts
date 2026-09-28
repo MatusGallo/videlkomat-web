@@ -4,9 +4,7 @@ import { CURRENT_YEAR, CURRENT_MONTH, PROFIT_RATE, FUEL_COST_RATE } from "../con
 // Zápis patří do kalendářního měsíce svého data (celý měsíc, 1.–poslední den).
 // Vrací { y, m } – rok a 0-based index měsíce.
 export function periodOf(iso: string): { y: number; m: number } {
-  const y = parseInt(iso.slice(0, 4), 10);
-  const mo = parseInt(iso.slice(5, 7), 10) - 1;
-  return { y, m: mo };
+  return { y: parseInt(iso.slice(0, 4), 10), m: parseInt(iso.slice(5, 7), 10) - 1 };
 }
 
 export function computeStats(entries: Entry[], fuels: Fuel[], year: number): Stats {
@@ -61,7 +59,7 @@ export function computeStats(entries: Entry[], fuels: Fuel[], year: number): Sta
   };
 }
 
-export function availableYears(entries: Entry[], fuels: Fuel[] = []): number[] {
+export function availableYears(entries: Entry[], fuels: Fuel[]): number[] {
   const set = new Set<number>();
   entries.forEach((e) => set.add(periodOf(e.date).y));
   fuels.forEach((f) => set.add(periodOf(f.date).y));
@@ -82,8 +80,7 @@ export function activeMonthsOf(months: MonthStat[], year: number): number[] {
 export function dayStat(
   entries: Entry[],
   today: string,
-  sparkDays = 14,
-): { total: number; prev: number; prevDate: string | null; change: MoMChange; series: number[] } {
+): { total: number; prev: number; prevDate: string | null; change: MoMChange } {
   const byDate = new Map<string, number>();
   entries.forEach((e) => byDate.set(e.date, (byDate.get(e.date) ?? 0) + e.amount));
   const total = byDate.get(today) ?? 0;
@@ -91,15 +88,7 @@ export function dayStat(
   const prevDate = prevDates.length ? prevDates[prevDates.length - 1] : null;
   const prev = prevDate ? byDate.get(prevDate) ?? 0 : 0;
   const change: MoMChange = prev ? { pct: ((total - prev) / prev) * 100, up: total >= prev } : null;
-  const series: number[] = [];
-  const base = new Date(today + "T00:00:00");
-  for (let i = sparkDays - 1; i >= 0; i--) {
-    const d = new Date(base);
-    d.setDate(base.getDate() - i);
-    const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-    series.push(byDate.get(iso) ?? 0);
-  }
-  return { total, prev, prevDate, change, series };
+  return { total, prev, prevDate, change };
 }
 
 // Porovnání vybraného měsíce s předchozím měsícem (v rámci roku).

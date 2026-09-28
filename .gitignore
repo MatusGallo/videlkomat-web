@@ -29,3 +29,7 @@ Vid-lkomat/
 
 # Impeccable skill artifacts
 .impeccable/
+
+# Cache OSM dat pro scripts/build-network.ts
+scripts/.osm-cache/
+scripts/.police-cache/

@@ -1,10 +1,8 @@
-import type { MonthStat, View } from "../types";
+import type { View, YearGroup } from "../types";
 import { MONTHS, CURRENT_MONTH, CURRENT_YEAR } from "../constants";
-import { useSettings } from "../utils/SettingsContext";
-import { LayoutDashboard, CalendarDays, Fuel as FuelIcon, ChevronRight, LogOut } from "../icons";
-import { logout } from "./PasswordGate";
-
-type YearGroup = { year: number; months: MonthStat[]; activeMonths: number[] };
+import { useSettings } from "../utils/settings";
+import { LayoutDashboard, CalendarDays, Fuel as FuelIcon, MapPin, ChevronRight, LogOut } from "../icons";
+import { logout } from "../utils/auth";
 
 type Props = {
   view: View;
@@ -34,6 +32,14 @@ export function MenuView({ view, go, yearGroups }: Props) {
         >
           <FuelIcon size={20} />
           <span className="od-menu-row-t">Tankování</span>
+          <ChevronRight size={17} className="od-menu-chev" />
+        </button>
+        <button
+          className={"od-menu-row" + (view === "predict" ? " is-active" : "")}
+          onClick={() => go("predict")}
+        >
+          <MapPin size={20} />
+          <span className="od-menu-row-t">Kde čekat</span>
           <ChevronRight size={17} className="od-menu-chev" />
         </button>
       </div>

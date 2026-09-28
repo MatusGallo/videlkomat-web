@@ -154,11 +154,8 @@ function startRenderLoop(canvas: HTMLCanvasElement, color: string): (() => void)
   gl.uniform1f(uHigh, 0.72);
   gl.uniform1f(uAlpha, 0.58);
 
-  const applyColor = () => {
-    const [r, g, b] = resolveColor(color);
-    gl.uniform3f(uColor, r, g, b);
-  };
-  applyColor();
+  const [r, g, b] = resolveColor(color);
+  gl.uniform3f(uColor, r, g, b);
 
   const resize = () => {
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -177,9 +174,6 @@ function startRenderLoop(canvas: HTMLCanvasElement, color: string): (() => void)
 
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(canvas);
-  // Barva reaguje na přepnutí .dark na <html>, kdyby appka jednou dostala light mode.
-  const colorObserver = new MutationObserver(applyColor);
-  colorObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let contextLost = false;
@@ -224,7 +218,6 @@ function startRenderLoop(canvas: HTMLCanvasElement, color: string): (() => void)
     running = false;
     cancelAnimationFrame(frame);
     resizeObserver.disconnect();
-    colorObserver.disconnect();
     document.removeEventListener("visibilitychange", onVisibility);
     canvas.removeEventListener("webglcontextlost", onContextLost);
     canvas.removeEventListener("webglcontextrestored", onContextRestored);

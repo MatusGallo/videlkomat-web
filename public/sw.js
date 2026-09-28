@@ -1,7 +1,7 @@
 // Jednoduchý service worker pro Vydělkomat (PWA): offline app shell + instalace.
 // Data zásahů/tankování řeší appka sama (localStorage + /api sync), proto
 // API požadavky necachujeme.
-const CACHE = "vk-v1";
+const CACHE = "vk-v2";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/favicon.svg", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -25,6 +25,8 @@ self.addEventListener("fetch", (e) => {
 
   // API: vždy ze sítě, necachovat (data si drží appka v localStorage).
   if (url.origin === self.location.origin && url.pathname.startsWith("/api/")) return;
+  // Mapové dlaždice (Kde čekat): nechat na prohlížeči, ať necachujeme celou Prahu.
+  if (url.hostname.endsWith("tile.openstreetmap.org")) return;
 
   // Navigace = otevření appky: zkus síť, při výpadku vrať uloženou index.html.
   if (request.mode === "navigate") {

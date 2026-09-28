@@ -1,9 +1,12 @@
 import { useState } from "react";
 import type { Fuel } from "../types";
 import { FUEL_COST_RATE, FUEL_COST_PCT } from "../constants";
-import { czk, dateLabel, groupAmount, num1, parseAmount, plural, weekdayLabel } from "../utils/format";
-import { Fuel as FuelIcon, Droplet, Banknote, Plus, Check, X, Pencil, Trash } from "../icons";
+import { byDateDesc, czk, dateLabel, groupAmount, num1, parseAmount, plural, toInputAmount, weekdayLabel } from "../utils/format";
+import { useRowEdit } from "../hooks/useRowEdit";
+import { Fuel as FuelIcon, Droplet, Banknote, Plus } from "../icons";
 import { Kpi } from "./Kpi";
+import { Panel } from "./Panel";
+import { AmountInput, DateInput, InlineInput, RowActions } from "./RowActions";
 
 type Props = {
   fuels: Fuel[];
@@ -14,31 +17,18 @@ type Props = {
 };
 
 export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: Props) {
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editAmount, setEditAmount] = useState("");
-  const [editDate, setEditDate] = useState("");
   const [editLiters, setEditLiters] = useState("");
+  const ed = useRowEdit<Fuel>(
+    (id, amount, date) => {
+      const empty = editLiters.trim() === "";
+      const l = empty ? null : parseAmount(editLiters);
+      if (!empty && (l === null || l <= 0)) return false;
+      onEdit(id, amount, date, l);
+    },
+    (f) => setEditLiters(f.liters == null ? "" : toInputAmount(f.liters)),
+  );
 
-  const start = (f: Fuel) => {
-    setEditId(f.id);
-    setEditAmount(groupAmount(String(f.amount).replace(".", ",")));
-    setEditDate(f.date);
-    setEditLiters(f.liters == null ? "" : groupAmount(String(f.liters).replace(".", ",")));
-  };
-  const cancel = () => setEditId(null);
-  const save = () => {
-    const v = parseAmount(editAmount);
-    if (v === null || v <= 0) return;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(editDate)) return;
-    const l = editLiters.trim() === "" ? null : parseAmount(editLiters);
-    if (editLiters.trim() !== "" && (l === null || l <= 0)) return;
-    if (editId) onEdit(editId, v, editDate, l);
-    setEditId(null);
-  };
-
-  const sorted = fuels
-    .slice()
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const sorted = fuels.slice().sort(byDateDesc);
   const byDay: [string, Fuel[]][] = [];
   sorted.forEach((f) => {
     const last = byDay[byDay.length - 1];
@@ -52,8 +42,6 @@ export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: P
   const litersSum = withLiters.reduce((s, f) => s + (f.liters as number), 0);
   const amountWithLiters = withLiters.reduce((s, f) => s + f.amount, 0);
   const avgPerLiter = litersSum > 0 ? amountWithLiters / litersSum : 0;
-
-  const perLiter = (f: Fuel) => (f.liters && f.liters > 0 ? f.amount / f.liters : null);
 
   return (
     <div className="od-fade">
@@ -83,15 +71,18 @@ export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: P
         />
       </div>
 
-      <section className="od-panel">
-        <div className="od-panel-head">
-          <div className="od-panel-title">Záznamy tankování</div>
-          {sorted.length > 0 && (
-            <button className="od-add" onClick={onAddClick}>
+      <Panel
+        bare={sorted.length > 0}
+        title="Záznamy tankování"
+        icon={<FuelIcon size={16} />}
+        tools={
+          sorted.length > 0 && (
+            <button className="od-add od-add-sm" onClick={onAddClick}>
               <Plus size={16} /> Přidat tankování
             </button>
-          )}
-        </div>
+          )
+        }
+      >
         {sorted.length === 0 ? (
           <div className="od-empty od-empty-cta">
             <div className="od-empty-ico"><FuelIcon size={26} /></div>
@@ -132,64 +123,25 @@ export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: P
                       </thead>
                       <tbody>
                         {items.map((f, i) => {
-                          const editing = editId === f.id;
-                          const amt = editing ? parseAmount(editAmount) || 0 : f.amount;
-                          const pl = editing
-                            ? (() => {
-                                const l = parseAmount(editLiters);
-                                return l && l > 0 ? amt / l : null;
-                              })()
-                            : perLiter(f);
+                          const editing = ed.editId === f.id;
+                          const amt = editing ? parseAmount(ed.editVal) || 0 : f.amount;
+                          const liters = editing ? parseAmount(editLiters) : f.liters;
+                          const pl = liters && liters > 0 ? amt / liters : null;
                           return (
                             <tr key={f.id}>
                               <td className="faint mono">{i + 1}</td>
-                              <td className="mono">
-                                {editing ? (
-                                  <input
-                                    className="od-inline od-inline-date"
-                                    type="date"
-                                    value={editDate}
-                                    onChange={(e) => setEditDate(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") save();
-                                      if (e.key === "Escape") cancel();
-                                    }}
-                                  />
-                                ) : (
-                                  dateLabel(f.date)
-                                )}
-                              </td>
-                              <td className="r mono strong">
-                                {editing ? (
-                                  <input
-                                    className="od-inline"
-                                    autoFocus
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={editAmount}
-                                    onChange={(e) => setEditAmount(groupAmount(e.target.value))}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") save();
-                                      if (e.key === "Escape") cancel();
-                                    }}
-                                  />
-                                ) : (
-                                  czk(f.amount)
-                                )}
-                              </td>
+                              <td className="mono">{editing ? <DateInput ed={ed} /> : dateLabel(f.date)}</td>
+                              <td className="r mono strong">{editing ? <AmountInput ed={ed} /> : czk(f.amount)}</td>
                               <td className="r mono">
                                 {editing ? (
-                                  <input
-                                    className="od-inline"
+                                  <InlineInput
                                     type="text"
                                     inputMode="decimal"
                                     placeholder="–"
                                     value={editLiters}
-                                    onChange={(e) => setEditLiters(groupAmount(e.target.value))}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") save();
-                                      if (e.key === "Escape") cancel();
-                                    }}
+                                    onValue={(v) => setEditLiters(groupAmount(v))}
+                                    onSave={ed.save}
+                                    onCancel={ed.cancel}
                                   />
                                 ) : f.liters && f.liters > 0 ? (
                                   `${num1(f.liters)} L`
@@ -200,27 +152,7 @@ export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: P
                               <td className="r mono">{pl ? `${num1(pl)}` : <span className="faint">–</span>}</td>
                               <td className="r mono profit">{czk(amt * FUEL_COST_RATE)}</td>
                               <td className="r">
-                                <div className="od-row-acts">
-                                  {editing ? (
-                                    <>
-                                      <button className="od-row-btn save" onClick={save} title="Uložit">
-                                        <Check size={15} />
-                                      </button>
-                                      <button className="od-row-btn" onClick={cancel} title="Zrušit">
-                                        <X size={15} />
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <button className="od-row-btn" onClick={() => start(f)} title="Upravit">
-                                        <Pencil size={14} />
-                                      </button>
-                                      <button className="od-del" onClick={() => onRequestDelete(f)} title="Smazat">
-                                        <Trash size={14} />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
+                                <RowActions e={f} ed={ed} onRequestDelete={onRequestDelete} />
                               </td>
                             </tr>
                           );
@@ -233,7 +165,7 @@ export function FuelView({ fuels, year, onAddClick, onEdit, onRequestDelete }: P
             })}
           </div>
         )}
-      </section>
+      </Panel>
     </div>
   );
 }

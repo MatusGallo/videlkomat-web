@@ -4,7 +4,6 @@ import { CalendarDays, ChevronLeft, ChevronRight } from "../icons";
 type Props = {
   value: string; // ISO "yyyy-mm-dd"
   onChange: (iso: string) => void;
-  autoFocus?: boolean;
 };
 
 const WD = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
@@ -32,7 +31,7 @@ const triggerLabel = (iso: string): { wd: string; rest: string } | null => {
   return { wd, rest: `${p.d}. ${p.m + 1}. ${p.y}` };
 };
 
-export function DateField({ value, onChange, autoFocus }: Props) {
+export function DateField({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   // Month currently displayed in the popup
   const [view, setView] = useState(() => {
@@ -41,16 +40,16 @@ export function DateField({ value, onChange, autoFocus }: Props) {
     return { y: p ? p.y : now.getFullYear(), m: p ? p.m : now.getMonth() };
   });
   const wrapRef = useRef<HTMLDivElement>(null);
-  const popRef = useRef<HTMLDivElement>(null);
   const [drop, setDrop] = useState(false); // popup opens upward when true
 
   // Re-sync the visible month whenever the popup opens (value may have changed)
-  useEffect(() => {
-    if (open) {
+  const toggle = () => {
+    if (!open) {
       const p = parseISO(value);
       if (p) setView({ y: p.y, m: p.m });
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+    setOpen(!open);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -115,8 +114,7 @@ export function DateField({ value, onChange, autoFocus }: Props) {
       <button
         type="button"
         className={`od-date-trigger${open ? " is-open" : ""}`}
-        onClick={() => setOpen((o) => !o)}
-        autoFocus={autoFocus}
+        onClick={toggle}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -134,7 +132,6 @@ export function DateField({ value, onChange, autoFocus }: Props) {
       {open && (
         <div
           className={`od-cal${drop ? " od-cal-up" : ""}`}
-          ref={popRef}
           role="dialog"
           aria-label="Výběr data"
         >

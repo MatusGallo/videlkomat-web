@@ -10,6 +10,8 @@ export const MONTHS_SHORT = [
 
 export const STORAGE_KEY = "odtah_zaznamy_v1";
 export const FUEL_STORAGE_KEY = "odtah_tankovani_v1";
+export const JOBS_STORAGE_KEY = "odtah_vyjezdy_v1";
+export const PARAMS_STORAGE_KEY = "odtah_model_params_v1";
 
 // Běžné kalendářní měsíce (1.–poslední den měsíce).
 const _today = new Date();
@@ -22,3 +24,5 @@ export const FUEL_COST_RATE = 0.3;
 export const FUEL_COST_PCT = Math.round(FUEL_COST_RATE * 100);
 export const VAT_RATE = 0.21;
 export const VAT_PCT = Math.round(VAT_RATE * 100);
+// Kolik posledních tankování ukazuje dashboard.
+export const FUEL_RECORDS_LIMIT = 10;

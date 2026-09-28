@@ -35,10 +35,20 @@ export const weekdayLabel = (iso: string): string =>
 export const plural = (n: number, one: string, few: string, many: string): string =>
   n === 1 ? one : n >= 2 && n <= 4 ? few : many;
 
-export const todayISO = (): string => {
-  const d = new Date();
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-};
+// Lokální datum → "yyyy-mm-dd" (bez posunu do UTC jako u toISOString).
+export const isoOf = (d: Date): string =>
+  d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+
+export const todayISO = (): string => isoOf(new Date());
+
+export const isISODate = (s: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+// Číslo → text do inputu v českém formátu ("3500.5" → "3 500,5").
+export const toInputAmount = (n: number): string => groupAmount(String(n).replace(".", ","));
+
+// Řazení záznamů od nejnovějšího data.
+export const byDateDesc = (a: { date: string }, b: { date: string }): number =>
+  a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
 
 export const uid = (): string =>
   typeof crypto !== "undefined" && crypto.randomUUID

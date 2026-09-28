@@ -1,10 +1,12 @@
+import { createContext, useContext } from "react";
+
 export type Settings = {
   selectedYear: number;
 };
 
 const SETTINGS_KEY = "vydelkomat_settings_v1";
 
-export const DEFAULT_SETTINGS: Settings = {
+const DEFAULT_SETTINGS: Settings = {
   selectedYear: new Date().getFullYear(),
 };
 
@@ -28,3 +30,16 @@ export const saveSettings = (s: Settings): void => {
     /* noop */
   }
 };
+
+export type SettingsCtxValue = {
+  settings: Settings;
+  setSelectedYear: (year: number) => void;
+};
+
+export const SettingsCtx = createContext<SettingsCtxValue | null>(null);
+
+export function useSettings(): SettingsCtxValue {
+  const ctx = useContext(SettingsCtx);
+  if (!ctx) throw new Error("useSettings must be used within SettingsProvider");
+  return ctx;
+}

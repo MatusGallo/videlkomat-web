@@ -1,11 +1,9 @@
 import { useState } from "react";
-import type { MonthStat, View } from "../types";
+import type { View, YearGroup } from "../types";
 import { MONTHS, CURRENT_MONTH, CURRENT_YEAR } from "../constants";
-import { useSettings } from "../utils/SettingsContext";
-import { Logo, X, LayoutDashboard, CalendarDays, Plus, LogOut, ChevronDown, Fuel } from "../icons";
-import { logout } from "./PasswordGate";
-
-type YearGroup = { year: number; months: MonthStat[]; activeMonths: number[] };
+import { useSettings } from "../utils/settings";
+import { Logo, X, LayoutDashboard, CalendarDays, Plus, LogOut, ChevronDown, Fuel, MapPin, Truck } from "../icons";
+import { logout } from "../utils/auth";
 
 type Props = {
   view: View;
@@ -15,11 +13,12 @@ type Props = {
   yearGroups: YearGroup[];
   onQuickAdd: () => void;
   onFuelAdd: () => void;
+  onJobAdd: () => void;
 };
 
 export function Sidebar({
   view, go, open, onClose,
-  yearGroups, onQuickAdd, onFuelAdd,
+  yearGroups, onQuickAdd, onFuelAdd, onJobAdd,
 }: Props) {
   const { settings } = useSettings();
   const [openYears, setOpenYears] = useState<Set<number>>(() => new Set([CURRENT_YEAR]));
@@ -52,6 +51,10 @@ export function Sidebar({
         <Fuel size={16} /> Tankování <span className="od-kbd">T</span>
       </button>
 
+      <button className="od-quick-btn od-quick-btn-fuel" onClick={onJobAdd} title="Výjezd (V)">
+        <Truck size={16} /> Výjezd <span className="od-kbd">V</span>
+      </button>
+
       <nav className="od-nav">
         <button
           className={"od-nav-item" + (view === "dashboard" ? " is-active" : "")}
@@ -64,6 +67,12 @@ export function Sidebar({
           onClick={() => go("fuel")}
         >
           <Fuel size={18} /> <span>Tankování</span>
+        </button>
+        <button
+          className={"od-nav-item" + (view === "predict" ? " is-active" : "")}
+          onClick={() => go("predict")}
+        >
+          <MapPin size={18} /> <span>Kde čekat</span>
         </button>
         {yearGroups.map((g) => {
           const isOpen = openYears.has(g.year);

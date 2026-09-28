@@ -1,53 +1,45 @@
 import type { Entry, Fuel } from "../types";
-import { AUTH_PW_KEY } from "../components/PasswordGate";
+import type { JobLog, ModelParams } from "../predict/types";
+import { AUTH_PW_KEY } from "./auth";
 
 const headers = (): HeadersInit => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${localStorage.getItem(AUTH_PW_KEY) ?? ""}`,
 });
 
-export async function apiList(): Promise<Entry[]> {
-  const r = await fetch("/api/entries", { headers: headers() });
-  if (!r.ok) throw new Error(`GET /api/entries → ${r.status}`);
-  return (await r.json()) as Entry[];
-}
-
-export async function apiUpsert(e: Entry): Promise<void> {
-  const r = await fetch("/api/entries", {
-    method: "POST",
+async function call(method: string, url: string, body?: unknown): Promise<Response> {
+  const r = await fetch(url, {
+    method,
     headers: headers(),
-    body: JSON.stringify(e),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(`POST /api/entries → ${r.status}`);
+  if (!r.ok) throw new Error(`${method} ${url} → ${r.status}`);
+  return r;
 }
 
-export async function apiDelete(id: string): Promise<void> {
-  const r = await fetch(`/api/entries?id=${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    headers: headers(),
-  });
-  if (!r.ok) throw new Error(`DELETE /api/entries → ${r.status}`);
+export type Resource<T> = {
+  list: () => Promise<T[]>;
+  upsert: (item: T) => Promise<void>;
+  remove: (id: string) => Promise<void>;
+};
+
+// Obě tabulky (/api/entries, /api/fuel) mají stejné REST rozhraní.
+function resource<T>(path: string): Resource<T> {
+  return {
+    list: async () => (await (await call("GET", path)).json()) as T[],
+    upsert: async (item) => {
+      await call("POST", path, item);
+    },
+    remove: async (id) => {
+      await call("DELETE", `${path}?id=${encodeURIComponent(id)}`);
+    },
+  };
 }
 
-export async function fuelList(): Promise<Fuel[]> {
-  const r = await fetch("/api/fuel", { headers: headers() });
-  if (!r.ok) throw new Error(`GET /api/fuel → ${r.status}`);
-  return (await r.json()) as Fuel[];
-}
+export const entriesApi = resource<Entry>("/api/entries");
+export const fuelApi = resource<Fuel>("/api/fuel");
 
-export async function fuelUpsert(f: Fuel): Promise<void> {
-  const r = await fetch("/api/fuel", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(f),
-  });
-  if (!r.ok) throw new Error(`POST /api/fuel → ${r.status}`);
-}
-
-export async function fuelDelete(id: string): Promise<void> {
-  const r = await fetch(`/api/fuel?id=${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    headers: headers(),
-  });
-  if (!r.ok) throw new Error(`DELETE /api/fuel → ${r.status}`);
-}
+// Kde čekat – výjezdy a verzované parametry modelu.
+export const jobsApi = resource<JobLog>("/api/jobs");
+export type ParamsRow = { id: string; params: ModelParams };
+export const paramsApi = resource<ParamsRow>("/api/params");

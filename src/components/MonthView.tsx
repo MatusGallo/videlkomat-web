@@ -1,11 +1,12 @@
 import { useRef, useState } from "react";
 import type { Entry, MonthStat } from "../types";
 import { MONTHS, CURRENT_MONTH, CURRENT_YEAR, PROFIT_RATE, PROFIT_PCT } from "../constants";
-import { czk, dateLabel, groupAmount, parseAmount, todayISO, weekdayLabel, plural } from "../utils/format";
-import { useSettings } from "../utils/SettingsContext";
+import { byDateDesc, czk, dateLabel, groupAmount, parseAmount, todayISO, weekdayLabel, plural } from "../utils/format";
+import { useSettings } from "../utils/settings";
 import { useRowEdit } from "../hooks/useRowEdit";
 import { Truck, Plus, Banknote, TrendingUp, Wallet } from "../icons";
 import { Kpi } from "./Kpi";
+import { Panel } from "./Panel";
 import { AmountInput, DateInput, RowActions } from "./RowActions";
 import { DateField } from "./DateField";
 
@@ -30,9 +31,7 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
   const [err, setErr] = useState("");
   const ref = useRef<HTMLInputElement>(null);
   const ed = useRowEdit(onEdit);
-  const sorted = entries
-    .slice()
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const sorted = entries.slice().sort(byDateDesc);
   // Seskup zásahy po dnech (nejbližší/nejnovější den první) – jeden den = jedna tabulka se souhrnem.
   const byDay: [string, Entry[]][] = [];
   sorted.forEach((e) => {
@@ -41,21 +40,6 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
     else byDay.push([e.date, [e]]);
   });
   const previewAmount = parseAmount(amount);
-
-  const kpiFuelProfit = (
-    <Kpi
-      key="fuel-profit"
-      label="Zisk po palivu"
-      value={czk(monthStat.profit - monthStat.fuelCost)}
-      icon={<Wallet size={18} />}
-      accent
-      foot={
-        monthStat.fuelCost > 0
-          ? `Čistý zisk ${czk(monthStat.profit)} − palivo ${czk(monthStat.fuelCost)}`
-          : "žádné palivo v měsíci"
-      }
-    />
-  );
 
   const submit = () => {
     const v = parseAmount(amount);
@@ -76,7 +60,17 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
       </div>
 
       <div className="od-kpis od-kpis-avg">
-        {kpiFuelProfit}
+        <Kpi
+          label="Zisk po palivu"
+          value={czk(monthStat.profit - monthStat.fuelCost)}
+          icon={<Wallet size={18} />}
+          accent
+          foot={
+            monthStat.fuelCost > 0
+              ? `Čistý zisk ${czk(monthStat.profit)} − palivo ${czk(monthStat.fuelCost)}`
+              : "žádné palivo v měsíci"
+          }
+        />
         <Kpi
           label="Celková částka"
           value={czk(monthStat.total)}
@@ -100,8 +94,7 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
       </div>
 
       {isCurrent && (
-        <section className="od-panel">
-          <div className="od-panel-head"><div className="od-panel-title">Nový zásah</div></div>
+        <Panel title="Nový zásah" icon={<Plus size={16} />}>
           <div className="od-form">
             <div className="od-field">
               <label>Datum</label>
@@ -130,16 +123,20 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
             </button>
           </div>
           {err && <p className="od-err">{err}</p>}
-        </section>
+        </Panel>
       )}
 
-      <section className="od-records">
-        <div className="od-panel-head">
-          <div className="od-panel-title">
+      <Panel
+        bare={sorted.length > 0}
+        className="od-records"
+        icon={<Truck size={16} />}
+        title={
+          <>
             Záznamy · {monthStat.count} {plural(monthStat.count, "zásah", "zásahy", "zásahů")}
             {byDay.length > 0 && ` · ${byDay.length} ${plural(byDay.length, "den", "dny", "dní")}`}
-          </div>
-        </div>
+          </>
+        }
+      >
         {sorted.length === 0 ? (
           <div className="od-empty">
             <Truck size={34} />
@@ -198,7 +195,7 @@ export function MonthView({ m, entries, monthStat, onAdd, onEdit, onRequestDelet
             })}
           </div>
         )}
-      </section>
+      </Panel>
     </div>
   );
 }

@@ -15,17 +15,9 @@ export function LineTrend({ points }: Props) {
     if (!el) return;
     const update = () => setW(el.clientWidth || 700);
     update();
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(update);
-      ro.observe(el);
-    } else {
-      window.addEventListener("resize", update);
-    }
-    return () => {
-      if (ro) ro.disconnect();
-      else window.removeEventListener("resize", update);
-    };
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   const H = w < 560 ? 230 : 300;

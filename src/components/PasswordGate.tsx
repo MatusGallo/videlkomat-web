@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LoginBackground } from "./LoginBackground";
+import { AUTH_KEY, AUTH_PW_KEY } from "../utils/auth";
+import { Logo } from "../icons";
 
 const HASH = "7e11bc65a7852d1c5833549ad3a1bbc743deac167c2f18ae11b7b2784dd8d00d";
-export const AUTH_KEY = "vydelkomat_auth_v1";
-// Heslo držíme v localStorage (přetrvá i po zavření PWA), posílá se jako bearer token na /api.
-export const AUTH_PW_KEY = "vydelkomat_pw_v1";
-
-export function logout(): void {
-  localStorage.removeItem(AUTH_KEY);
-  localStorage.removeItem(AUTH_PW_KEY);
-  window.location.reload();
-}
 
 const toHex = (bytes: Uint8Array): string =>
   Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -140,7 +133,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       <main className="vk-stage">
         <div className="vk-card">
           <div className="vk-card-brand">
-            <img className="vk-card-logo" src="/icon.svg" alt="" />
+            <Logo size={28} className="vk-card-logo" />
             <span className="vk-card-name">Vydělkomat</span>
           </div>
 

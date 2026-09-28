@@ -2,9 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Entry } from "../types";
 import { MONTHS_SHORT } from "../constants";
-import { plural, todayISO, weekdayLabel } from "../utils/format";
+import { isoOf, plural, todayISO, weekdayLabel } from "../utils/format";
 
-type Props = { entries: Entry[]; year: number };
+type Props = {
+  year: number;
+  // Zásahy (Souhrn), nebo hotové počty po dnech (např. nehody v Historii).
+  entries?: Entry[];
+  counts?: Map<string, number>;
+  // Popisek počtu v tooltipu a patička.
+  unitLabel?: string;
+  footText?: string;
+  // Doplňující řádek tooltipu (např. název svátku).
+  dayNote?: (iso: string) => string | null;
+};
 
 type Cell = { iso: string; count: number; level: number; inYear: boolean };
 
@@ -20,24 +30,25 @@ const levelOf = (count: number, max: number): number =>
 // Monday-based index (Po = 0 … Ne = 6).
 const mondayIdx = (d: Date): number => (d.getDay() + 6) % 7;
 
-const isoOf = (d: Date): string =>
-  d.getFullYear() +
-  "-" +
-  String(d.getMonth() + 1).padStart(2, "0") +
-  "-" +
-  String(d.getDate()).padStart(2, "0");
-
-export function ActivityHeatmap({ entries, year }: Props) {
+export function ActivityHeatmap({ entries, counts, year, unitLabel = "Zásahy", footText, dayNote }: Props) {
   const today = todayISO();
 
   const { weeks, monthLabels, total, activeDays } = useMemo(() => {
     // Počet zásahů na kalendářní den (skutečné datum, ne výplatní období).
     const byDate = new Map<string, number>();
     let total = 0;
-    for (const e of entries) {
-      if (parseInt(e.date.slice(0, 4), 10) !== year) continue;
-      byDate.set(e.date, (byDate.get(e.date) ?? 0) + 1);
-      total += 1;
+    if (counts) {
+      for (const [iso, n] of counts) {
+        if (parseInt(iso.slice(0, 4), 10) !== year || n <= 0) continue;
+        byDate.set(iso, n);
+        total += n;
+      }
+    } else {
+      for (const e of entries ?? []) {
+        if (parseInt(e.date.slice(0, 4), 10) !== year) continue;
+        byDate.set(e.date, (byDate.get(e.date) ?? 0) + 1);
+        total += 1;
+      }
     }
     let maxCount = 0;
     for (const v of byDate.values()) if (v > maxCount) maxCount = v;
@@ -71,7 +82,7 @@ export function ActivityHeatmap({ entries, year }: Props) {
     }
 
     return { weeks, monthLabels, total, activeDays: byDate.size };
-  }, [entries, year]);
+  }, [entries, counts, year]);
 
   const monthByCol = new Map(monthLabels.map((m) => [m.col, m.label]));
 
@@ -151,14 +162,15 @@ export function ActivityHeatmap({ entries, year }: Props) {
           <div className="od-charttip">
             <div className="od-tip-h">{weekdayCap(hover.iso)} · {fullDate(hover.iso)}</div>
             <div className="od-tip-r">
-              <span className="d n" /> Zásahy <b>{hover.count}</b>
+              <span className="d n" /> {unitLabel} <b>{hover.count}</b>
             </div>
+            {dayNote?.(hover.iso) && <div className="od-tip-r">{dayNote(hover.iso)}</div>}
           </div>
         </div>
       )}
       <div className="ah-foot">
         <span className="ah-foot-info">
-          {activeDays} {plural(activeDays, "den", "dny", "dní")} se zásahy · {total} celkem
+          {footText ?? <>{activeDays} {plural(activeDays, "den", "dny", "dní")} se zásahy · {total} celkem</>}
         </span>
       </div>
     </div>

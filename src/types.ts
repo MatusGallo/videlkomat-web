@@ -42,7 +42,10 @@ export type Stats = {
   year: YearStat;
 };
 
-export type View = "dashboard" | "fuel" | "menu" | number;
+// Souhrn měsíců jednoho roku pro navigaci (sidebar, mobilní menu).
+export type YearGroup = { year: number; months: MonthStat[]; activeMonths: number[] };
+
+export type View = "dashboard" | "fuel" | "predict" | "menu" | number;
 
 export type MoMChange = { pct: number; up: boolean } | null;
 

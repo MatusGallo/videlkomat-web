@@ -7,25 +7,37 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "calibrate": "tsx scripts/calibrate.ts",
+    "backtest": "tsx scripts/backtest.ts",
+    "import:cdv": "tsx scripts/import-cdv.ts",
+    "build:network": "tsx scripts/build-network.ts",
+    "fetch:police": "tsx scripts/fetch-police.ts"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^24.12.3",
-    "@vercel/node": "^5.3.27",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vercel/node": "^5.3.27",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "geobuf": "^3.0.2",
     "globals": "^17.6.0",
+    "pbf": "^3.3.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^5.0.2"
   }
 }

@@ -24,6 +24,63 @@ data se tak neztratí při vyčištění prohlížeče a synchronizují se mezi 
 `npm i -g vercel` a pak `vercel dev` (env proměnné nastav přes `vercel env pull`).
 Bez toho appka funguje dál nad lokální cache.
 
+## Kde čekat (doporučení stanoviště)
+
+Sekce doporučuje, kde s vozem čekat, aby byla co největší šance na zakázku:
+`očekávané zakázky = poptávka na úsecích × šance, že dorazím první p(T)`.
+
+- **Model** – čisté funkce v [src/predict/](src/predict/) (`model.ts`, `calibrate.ts`),
+  testy `npm test`. Rozhraní je obecné (zóny poptávky × stanoviště × dojezd podle hodiny),
+  aby šlo později přejít na H3 mřížku a routovací engine.
+- **Parametry** – verzované v tabulce `predict_params` (`/api/params`); appka použije
+  nejvyšší verzi, bez ní [ukázková data](src/predict/demoParams.ts) se štítkem DEMO.
+  Novou verzi vytvoří úprava stanovišť, kalibrace nebo import.
+- **Mapa** – Leaflet nad dlaždicemi OpenStreetMap (bez API klíče, ztmavené CSS filtrem).
+  Trasy úseků jsou z OSM v `demoParams.ts` (`geo.path`), polohu stanovišť si řidič
+  nastaví klepnutím do mapy v záložce Stanoviště.
+- **Interaktivita** – klepnutí na úsek = detail (poptávka přes den, dojezdy), na stanoviště =
+  dosah (úseky obarvené šancí dorazit první), podržení na úseku = zápis výjezdu s místem;
+  časová osa pod mapou s přehráním dne; plán směny s upozorněním 15 min před přesunem /
+  špičkou (notifikace běží, dokud je appka otevřená – bez push serveru).
+- **Výjezdy** – tabulka `jobs` (`/api/jobs`), zapisují se v sheetu Přidat → Výjezd,
+  export CSV/JSON v záložce Výjezdy.
+- **Páteřní síť** (fáze 2) – Městský okruh, D0 a radiály D1/D5/D6/D7/D8/D10/D11/R4 v
+  [src/predict/network.json](src/predict/network.json), generuje `npm run build:network`
+  (OSM přes Overpass, dojezdy ze stanovišť přes veřejný OSRM; `-- --refresh` stáhne OSM znovu,
+  `-- --no-osrm` jen odhad ze vzdálenosti). Radiály se dělí na D0: úseky uvnitř mají id `d1-01…`,
+  úseky za D0 až k okraji výřezu dat `d1-x01…`, takže přidání nemění stávající id. Po přestavbě sítě
+  pusťte znovu import nehod – přiřadí poptávku i novým úsekům.
+  Za D0 jsou ukázková stanoviště V1–V7 (benzínky / odpočívky z OSM); starší uložené parametry je
+  dostanou jednou (`demoStandsSeen`), smazaná se nevracejí.
+  Vlastní / přesunutá stanoviště dostanou dojezdy odhadem z polohy.
+- **Reálná data** – poptávka je z nehod Policie ČR ([src/predict/demand.json](src/predict/demand.json)).
+  Aktualizace: `npm run fetch:police` (stáhne uzavřené měsíce z mapy nehod Policie ČR, šetrně a s cache)
+  a `npm run import:cdv -- scripts/.police-cache/praha.csv --years 3 --bundle "Policie ČR, nehody M/RRRR–M/RRRR"`.
+  V datech nejsou drobné nehody sepsané bez policie ani poruchy – absolutní čísla jsou proto nižší
+  než skutečné zakázky, pořadí úseků a hodin sedí. Stanoviště jsou dál ukázková.
+- **Import nehod** – `npm run import:cdv -- udalosti.csv --years 3 [--upload]`
+  (CSV s časem a GPS `lat,lng` – úsek se přiřadí sám do 150 m – nebo s `zone_id`; pro silnice
+  s ≥ 200 událostmi spočítá vlastní hodinový profil, viz [scripts/import-cdv.ts](scripts/import-cdv.ts)).
+- **Svátky a sezóna** – import spočítá z denních počtů nehod násobky pro státní svátky, Vánoce
+  (24.–26. 12.), konec roku (27. 12.–1. 1.) a měsíce ([src/predict/calendar.ts](src/predict/calendar.ts)).
+  Záložky Teď a Týden počítají s konkrétními daty nejbližších 7 dnů (`withCalendar`).
+- **Historie** – nehody po dnech a události na síti v [src/predict/history.json](src/predict/history.json)
+  (zapisuje `import:cdv --bundle`): tento den v minulých letech, kalendář, svátky a sezóna, vlastní výjezdy.
+- **Zpětný test** – `npm run backtest [-- --split 2025-09-01]`: model naučený na nehodách před datem
+  porovná s tím, co se stalo potom (pořadí úseků, hodiny týdne, „Vysoká“ hodiny, pořadí stanovišť), vždy
+  proti naivnímu odhadu podle délky úseku. Dojezdy tím ověřené nejsou – ty ověří až vlastní výjezdy.
+- **Zápis výjezdu** – v hlavní kartě „Jedu na zakázku“ → Získáno / Předběhnut otevře zápis s časem vyjetí,
+  stanovištěm, změřeným dojezdem a (se zapnutou polohou) úsekem; rozjetý výjezd přežije zavření appky.
+- **Učení z výjezdů** – od 20 výjezdů appka navrhne násobky poptávky po úsecích (záložka Výjezdy).
+- **Plán směny** počítá s dobou přesunu mezi stanovišti a se zapnutou polohou i s cestou z místa, kde jste; **návrh nových míst** a slepá místa jsou
+  v záložce Stanoviště; **moje poloha** (GPS) jen po zapnutí, zůstává v zařízení.
+- Skripty běží přes `tsx` (sdílí moduly s appkou).
+- **Kalibrace** – tlačítko v appce nebo `npm run calibrate [-- --dry-run]`
+  (potřebuje `SUPABASE_URL` a `SUPABASE_SERVICE_ROLE_KEY`; dá se pouštět cronem).
+
+Po nasazení je potřeba v Supabase znovu spustit [supabase/schema.sql](supabase/schema.sql)
+(přibyly tabulky `jobs` a `predict_params`).
+
 ---
 
 # React + TypeScript + Vite

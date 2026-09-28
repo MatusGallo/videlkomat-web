@@ -1,47 +1,63 @@
-import type { Entry } from "../types";
-import type { RowEdit } from "../hooks/useRowEdit";
+import type { InputHTMLAttributes } from "react";
+import type { Editable, RowEdit } from "../hooks/useRowEdit";
 import { Check, X, Pencil, Trash } from "../icons";
 import { groupAmount } from "../utils/format";
 
-export function AmountInput({ ed }: { ed: RowEdit }) {
+type InlineInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
+  onValue: (v: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+};
+
+// Inline input v řádku tabulky: Enter uloží, Escape zruší.
+export function InlineInput({ onValue, onSave, onCancel, className, ...rest }: InlineInputProps) {
   return (
     <input
-      className="od-inline"
+      className={"od-inline" + (className ? " " + className : "")}
+      {...rest}
+      onChange={(e) => onValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onSave();
+        if (e.key === "Escape") onCancel();
+      }}
+    />
+  );
+}
+
+export function AmountInput<T extends Editable>({ ed }: { ed: RowEdit<T> }) {
+  return (
+    <InlineInput
       autoFocus
       type="text"
       inputMode="decimal"
       value={ed.editVal}
-      onChange={(e) => ed.setEditVal(groupAmount(e.target.value))}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") ed.save();
-        if (e.key === "Escape") ed.cancel();
-      }}
+      onValue={(v) => ed.setEditVal(groupAmount(v))}
+      onSave={ed.save}
+      onCancel={ed.cancel}
     />
   );
 }
 
-export function DateInput({ ed }: { ed: RowEdit }) {
+export function DateInput<T extends Editable>({ ed }: { ed: RowEdit<T> }) {
   return (
-    <input
-      className="od-inline od-inline-date"
+    <InlineInput
+      className="od-inline-date"
       type="date"
       value={ed.editDate}
-      onChange={(e) => ed.setEditDate(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") ed.save();
-        if (e.key === "Escape") ed.cancel();
-      }}
+      onValue={ed.setEditDate}
+      onSave={ed.save}
+      onCancel={ed.cancel}
     />
   );
 }
 
-type RowActionsProps = {
-  e: Entry;
-  ed: RowEdit;
-  onRequestDelete: (entry: Entry) => void;
+type RowActionsProps<T extends Editable> = {
+  e: T;
+  ed: RowEdit<T>;
+  onRequestDelete: (entry: T) => void;
 };
 
-export function RowActions({ e, ed, onRequestDelete }: RowActionsProps) {
+export function RowActions<T extends Editable>({ e, ed, onRequestDelete }: RowActionsProps<T>) {
   if (ed.editId === e.id) {
     return (
       <div className="od-row-acts">

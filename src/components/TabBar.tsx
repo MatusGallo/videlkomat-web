@@ -1,5 +1,5 @@
 import type { View } from "../types";
-import { LayoutDashboard, Fuel as FuelIcon, Plus, Menu, X } from "../icons";
+import { LayoutDashboard, Fuel as FuelIcon, MapPin, Plus, Menu, X } from "../icons";
 
 type Props = {
   view: View;
@@ -10,8 +10,8 @@ type Props = {
 
 // iOS chrome (jen mobil/tablet, viz CSS):
 // – vpravo nahoře: Menu (přepínač; na stránce Menu se ikona animovaně změní na ×)
-// – dole pill: Souhrn · Tankování
-// – vpravo dole: samostatná akce Přidat (zásah)
+// – dole pill: Souhrn · Tankování · Kde čekat
+// – vpravo dole: samostatná akce Přidat (zásah; na Kde čekat výjezd)
 export function TabBar({ view, onGo, onAdd, onMenu }: Props) {
   const menuOpen = view === "menu";
   return (
@@ -42,12 +42,19 @@ export function TabBar({ view, onGo, onAdd, onMenu }: Props) {
           <FuelIcon size={22} />
           <span>Tankování</span>
         </button>
+        <button
+          className={"od-tab" + (view === "predict" ? " is-active" : "")}
+          onClick={() => onGo("predict")}
+        >
+          <MapPin size={22} />
+          <span>Kde čekat</span>
+        </button>
       </nav>
       <button
         className={"od-fab-add" + (menuOpen ? " is-hidden" : "")}
         onClick={onAdd}
-        aria-label="Přidat zásah"
-        title="Přidat zásah"
+        aria-label={view === "predict" ? "Zapsat výjezd" : "Přidat zásah"}
+        title={view === "predict" ? "Zapsat výjezd" : "Přidat zásah"}
       >
         <Plus size={26} />
       </button>
